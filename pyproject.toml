@@ -1,0 +1,21 @@
+[project]
+name = "whisperward-osint"
+version = "0.1.0"
+description = "Defensive OSINT Platform for Online Safety Investigations"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Meca Dismukes", email = "meca@pixorainc.com"}
+]
+dependencies = [
+    "typer[all]",
+    "rich",
+    "requests",
+    "aiohttp",
+    "Pillow",
+    "imagehash",
+]
+
+[project.scripts]
+whisperward = "whisperward:app"
