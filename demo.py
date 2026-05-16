@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Imports and setup
 """
 WhisperWard OSINT - Professional Demo Script
 Uses fictional test data only. For portfolio demonstration purposes.
-Run: python3 demo.py
+Run: python demo.py
 """
 
 from rich.console import Console
@@ -19,41 +19,41 @@ def demo():
 
     steps = [
         (
-            'python3 whisperward.py init-db',
+            'python whisperward.py init-db',
             'Initialize Database'
         ),
         (
-            'python3 whisperward.py new-case --name "Operation-SafePlay-2026"',
+            'python whisperward.py new-case --name "Operation-SafePlay-2026"',
             'Create Investigation Case'
         ),
         (
-            'python3 whisperward.py add-target --case CASE-2026 '
+            'python whisperward.py add-target --case CASE-2026 '
             '--username "FictionalUser123" --platform roblox',
             'Add Fictional Roblox Target'
         ),
         (
-            'python3 whisperward.py add-target --case CASE-2026 '
+            'python whisperward.py add-target --case CASE-2026 '
             '--username "FictionalUser123" --platform discord',
             'Add Fictional Discord Target (same username)'
         ),
         (
-            'python3 whisperward.py scan --case CASE-2026',
+            'python whisperward.py scan --case CASE-2026',
             'Run OSINT Collection'
         ),
         (
-            'python3 whisperward.py analyze --case CASE-2026 --ai',
+            'python whisperward.py analyze --case CASE-2026 --ai',
             'Run Behavioral Analysis (AI enabled)'
         ),
         (
-            'python3 whisperward.py graph --case CASE-2026',
+            'python whisperward.py graph --case CASE-2026',
             'Generate Identity Relationship Graph'
         ),
         (
-            'python3 whisperward.py export --case CASE-2026',
+            'python whisperward.py export --case CASE-2026',
             'Create Evidence Package'
         ),
         (
-            'python3 whisperward.py status --case CASE-2026',
+            'python whisperward.py status --case CASE-2026',
             'Show Case Summary'
         ),
     ]
