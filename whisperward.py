@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 WhisperWard OSINT - Main CLI Entry Point
-Phase 2 Updated Version
+Clean & Fixed Version
 """
 
 import typer
@@ -28,9 +28,8 @@ db = DatabaseManager()
 
 @app.command()
 def init_db():
-    """Initialize the SQLite database"""
     db.init()
-    console.print("[green]Database initialized successfully.[/green]")
+    console.print("[green]✅ Database initialized successfully.[/green]")
 
 
 @app.command()
@@ -39,9 +38,8 @@ def new_case(
     desc: Optional[str] = typer.Option(None, "--desc", help="Description"),
     analyst: str = typer.Option("Meca Dismukes", "--analyst", help="Analyst name")
 ):
-    """Create a new investigation case."""
     case_id = db.create_case(name, desc or "", analyst)
-    console.print(f"[bold green]+ Case created: {case_id}[/bold green]")
+    console.print(f"[bold green]✅ Case created: {case_id}[/bold green]")
 
 
 @app.command()
@@ -50,24 +48,23 @@ def add_target(
     username: str = typer.Option(..., "--username", help="Target username"),
     platform: str = typer.Option("roblox", "--platform", help="Platform")
 ):
-    """Add a target username to a case."""
     db.add_target(case_id, platform, username)
-    console.print(f"[blue]-> Target added: {username} on {platform}[/blue]")
+    console.print(f"[blue]→ Target added: {username} on {platform}[/blue]")
 
 
 @app.command()
 def scan(case_id: str = typer.Option(..., "--case", help="Case ID")):
-    """Run OSINT collection against all targets in a case."""
     ensure_directories()
     targets = db.get_case_targets(case_id)
     if not targets:
         console.print("[red]No targets found.[/red]")
         return
 
-    console.print(f"[bold cyan]Scanning {len(targets)} target(s)...[/bold cyan]")
+    console.print(f"[bold cyan]🔍 Scanning {len(targets)} target(s)...[/bold cyan]")
 
     with Progress(SpinnerColumn(), TextColumn("[bold cyan]{task.description}")) as progress:
-        task = progress.add_task("Collecting data...", total=len(targets))
+        task = progress.add_task("Collecting intelligence...", total=len(targets))
+        
         for t in targets:
             username = t["username"]
             target_id = t["target_id"]
@@ -81,44 +78,41 @@ def scan(case_id: str = typer.Option(..., "--case", help="Case ID")):
             asyncio.run(SherlockIntegration().scan_username(username, case_id, db, target_id))
             progress.advance(task)
 
-    console.print("[bold green]+ Scan completed[/bold green]")
+    console.print("[bold green]✅ Scan completed[/bold green]")
 
 
 @app.command()
 def analyze(
     case_id: str = typer.Option(..., "--case", help="Case ID"),
-    ai: bool = typer.Option(True, "--ai", help="Enable Ollama AI analysis")
+    ai: bool = typer.Option(True, "--ai", help="Enable AI + RAG analysis")
 ):
-    """Run behavioral analysis on collected artifacts."""
-    console.print(f"[cyan]Analyzing case {case_id}...[/cyan]")
+    console.print(f"[cyan]🧠 Analyzing case {case_id} with AI + RAG...[/cyan]")
+    
     text = db.get_text_for_analysis(case_id)
-    results = analyze_text(text, use_ai=ai)
-
+    results = analyze_text(text, use_ai=ai, case_id=case_id)
+    
     targets = db.get_case_targets(case_id)
     for t in targets:
         db.save_analysis(t["target_id"], results)
 
-    console.print(f"[bold magenta]Risk Score: {results.get('risk_score', 0)}/10[/bold magenta]")
+    console.print(f"[bold magenta]📊 Risk Score: {results.get('risk_score', 0):.1f}/10[/bold magenta]")
 
 
 @app.command()
 def graph(case_id: str = typer.Option(..., "--case", help="Case ID")):
-    """Generate identity relationship graph."""
-    console.print(f"[cyan]Generating identity relationship graph...[/cyan]")
+    console.print(f"[cyan]📈 Generating identity relationship graph...[/cyan]")
     generate_identity_graph(case_id, db)
-    console.print("[green]-> Graph visualization saved[/green]")
+    console.print("[green]✅ Graph visualization saved[/green]")
 
 
 @app.command()
 def export(case_id: str = typer.Option(..., "--case", help="Case ID")):
-    """Create evidence package with chain-of-custody."""
-    console.print(f"[cyan]Creating evidence package...[/cyan]")
+    console.print(f"[cyan]📦 Creating evidence package...[/cyan]")
     create_evidence_package(case_id)
 
 
 @app.command()
 def status(case_id: str = typer.Option(..., "--case", help="Case ID")):
-    """Show case summary."""
     summary = db.get_case_summary(case_id)
     console.print(f"\n[bold cyan]=== Case Status: {case_id} ===[/bold cyan]")
     console.print(f"Targets:   {summary['total_targets']}")
@@ -129,18 +123,17 @@ def status(case_id: str = typer.Option(..., "--case", help="Case ID")):
 @app.command()
 def run(
     case_id: str = typer.Option(..., "--case", help="Case ID"),
-    ai: bool = typer.Option(True, "--ai", help="Enable AI analysis")
+    ai: bool = typer.Option(True, "--ai", help="Enable AI + RAG analysis")
 ):
-    """Run full pipeline: Scan → Analyze → Graph → Export"""
     ensure_directories()
-    console.print(f"[bold cyan]=== Full Pipeline: {case_id} ===[/bold cyan]")
-
+    console.print(f"[bold cyan]🚀 Starting Full Pipeline: {case_id}[/bold cyan]")
+    
     scan(case_id)
     analyze(case_id, ai=ai)
     graph(case_id)
     export(case_id)
-
-    console.print("[bold green]Full pipeline completed successfully![/bold green]")
+    
+    console.print("[bold green]🎉 Full pipeline completed successfully![/bold green]")
 
 
 if __name__ == "__main__":
