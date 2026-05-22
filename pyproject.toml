@@ -1,13 +1,14 @@
 [project]
 name = "whisperward-osint"
-version = "0.1.0"
+version = "0.4.0"
 description = "Defensive OSINT Platform for Online Safety Investigations"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Meca Dismukes", email = "meca@pixorainc.com"}
+    {name = "Meca Dismukes", email = "meca@pixora.inc"}
 ]
+
 dependencies = [
     "typer[all]",
     "rich",
@@ -15,6 +16,13 @@ dependencies = [
     "aiohttp",
     "Pillow",
     "imagehash",
+    "beautifulsoup4",
+    "lxml",
+    "pytest",
+    "pytest-asyncio",
+    "tenacity",
+    "python-dotenv",
+    "loguru",
 ]
 
 [project.scripts]

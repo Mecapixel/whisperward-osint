@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 from .base_module import BaseOSINTModule
 from .utils import ensure_directories
+from .rate_limiter import api_limiter
 
 class SherlockIntegration(BaseOSINTModule):
     def __init__(self):
@@ -18,46 +19,47 @@ class SherlockIntegration(BaseOSINTModule):
         ensure_directories()
         print(f"[Sherlock] Scanning username: {username}")
 
-        sherlock_script = None
-        for path in self.sherlock_paths:
-            if path.exists():
-                sherlock_script = path
-                print(f"    Found Sherlock at: {path}")
-                break
+        async with api_limiter:
+            sherlock_script = None
+            for path in self.sherlock_paths:
+                if path.exists():
+                    sherlock_script = path
+                    print(f"    Found Sherlock at: {path}")
+                    break
 
-        if not sherlock_script:
-            print("    ❌ Sherlock script not found.")
-            return
+            if not sherlock_script:
+                print("    ❌ Sherlock not found. Skipping.")
+                return
 
-        try:
-            result = subprocess.run([
-                "python", str(sherlock_script),
-                username,
-                "--timeout", "8",
-                "--print-found",
-                "--site", "Twitter",
-                "--site", "Instagram",
-                "--site", "Discord",
-                "--site", "Roblox",
-                "--site", "Reddit",
-                "--site", "TikTok",
-                "--site", "YouTube",
-                "--site", "Twitch"
-            ], capture_output=True, text=True, timeout=90)
+            try:
+                result = subprocess.run([
+                    "python", str(sherlock_script),
+                    username,
+                    "--timeout", "8",
+                    "--print-found",
+                    "--site", "Twitter",
+                    "--site", "Instagram",
+                    "--site", "Discord",
+                    "--site", "Roblox",
+                    "--site", "Reddit",
+                    "--site", "TikTok",
+                    "--site", "YouTube",
+                    "--site", "Twitch"
+                ], capture_output=True, text=True, timeout=90)
 
-            found = self._parse_output(result.stdout)
-            data = {
-                "username": username,
-                "platforms_found": len(found),
-                "found_sites": found[:20]
-            }
-            db.save_artifact(target_id, self.module_name, "username_correlation", data)
-            print(f"    ✅ Sherlock found {len(found)} possible accounts")
+                found = self._parse_output(result.stdout)
+                data = {
+                    "username": username,
+                    "platforms_found": len(found),
+                    "found_sites": found[:20]
+                }
+                db.save_artifact(target_id, self.module_name, "username_correlation", data)
+                print(f"    ✅ Sherlock found {len(found)} possible accounts")
 
-        except subprocess.TimeoutExpired:
-            print("    ⚠️ Sherlock timed out")
-        except Exception as e:
-            print(f"    ❌ Sherlock error: {e}")
+            except subprocess.TimeoutExpired:
+                print("    ⚠️ Sherlock timed out")
+            except Exception as e:
+                print(f"    ❌ Sherlock error: {e}")
 
     def _parse_output(self, output: str):
         found = []
