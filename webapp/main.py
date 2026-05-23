@@ -49,25 +49,21 @@ DEMO_CASES = [
 ]
 
 
-# Root → boot screen (auto-redirects to /landing after 4.5s)
 @app.get("/", response_class=HTMLResponse)
 async def boot(request: Request):
     return templates.TemplateResponse(request, "boot.html")
 
 
-# Landing / login screen
 @app.get("/landing", response_class=HTMLResponse)
 async def landing(request: Request):
     return templates.TemplateResponse(request, "landing.html")
 
 
-# Auth stub — any submit goes to dashboard (real auth is Phase 6)
 @app.post("/auth")
 async def auth(operator: str = Form(...), auth_key: str = Form(...)):
     return RedirectResponse(url="/dashboard", status_code=303)
 
 
-# Dashboard — live cases with empty-state demo fallback
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
     try:
@@ -96,10 +92,20 @@ async def case_detail(request: Request, case_id: str):
     case_data = db.get_case(case_id)
     targets = db.get_case_targets(case_id) if case_data else []
     summary = db.get_case_summary(case_id) if case_data else {}
+
+    # Pull real risk score from analysis_results
+    risk_data = db.get_case_risk(case_id) if case_data else None
+    latest_risk = risk_data["latest_risk"] if risk_data else None
+    peak_risk = risk_data["peak_risk"] if risk_data else None
+    analysis_count = risk_data["analysis_count"] if risk_data else 0
+
     return templates.TemplateResponse(request, "case_detail.html", {
         "case": case_data,
         "targets": targets,
-        "summary": summary
+        "summary": summary,
+        "latest_risk": latest_risk,
+        "peak_risk": peak_risk,
+        "analysis_count": analysis_count,
     })
 
 

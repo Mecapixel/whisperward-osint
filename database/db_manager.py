@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 WhisperWard OSINT - Database Manager
-Phase 5 update: get_all_cases() now returns latest_risk + peak_risk
+Phase 5 update: get_all_cases() returns latest_risk + peak_risk
+Phase 5 update: get_case_risk() added for dossier page
 """
 import sqlite3
 import json
@@ -115,10 +116,39 @@ class DatabaseManager:
             "platforms": {p['platform']: p['count'] for p in platforms}
         }
 
+    def get_case_risk(self, case_id: str) -> Dict:
+        """Get latest and peak risk scores for a case (used by dossier page)."""
+        cursor = self.get_connection().execute("""
+            SELECT
+                MAX(ar.risk_score)    AS peak_risk,
+                COUNT(ar.analysis_id) AS analysis_count
+            FROM targets t
+            LEFT JOIN analysis_results ar ON ar.target_id = t.target_id
+            WHERE t.case_id = ?
+        """, (case_id,))
+        row = cursor.fetchone()
+        if not row or row["peak_risk"] is None:
+            return {"latest_risk": None, "peak_risk": None, "analysis_count": 0}
+
+        # Get latest score separately
+        cursor2 = self.get_connection().execute("""
+            SELECT ar.risk_score
+            FROM targets t
+            JOIN analysis_results ar ON ar.target_id = t.target_id
+            WHERE t.case_id = ?
+            ORDER BY ar.completed_at DESC
+            LIMIT 1
+        """, (case_id,))
+        latest_row = cursor2.fetchone()
+        return {
+            "latest_risk": latest_row["risk_score"] if latest_row else None,
+            "peak_risk": row["peak_risk"],
+            "analysis_count": row["analysis_count"]
+        }
+
     def get_all_cases(self):
         """
         Get all cases for the dashboard.
-
         Returns: case_id, case_name, analyst_name, created_at, target_count,
         primary_platform, latest_risk, peak_risk, analyzed_at, analysis_count
         """
@@ -141,9 +171,9 @@ class DatabaseManager:
             case_analysis AS (
                 SELECT
                     t.case_id,
-                    MAX(ar.risk_score)                              AS peak_risk,
-                    COUNT(ar.analysis_id)                           AS analysis_count,
-                    MAX(ar.completed_at)                            AS analyzed_at
+                    MAX(ar.risk_score)     AS peak_risk,
+                    COUNT(ar.analysis_id)  AS analysis_count,
+                    MAX(ar.completed_at)   AS analyzed_at
                 FROM targets t
                 LEFT JOIN analysis_results ar ON ar.target_id = t.target_id
                 GROUP BY t.case_id
@@ -163,17 +193,17 @@ class DatabaseManager:
                 c.case_name,
                 c.analyst_name,
                 c.created_at,
-                COALESCE(ct.target_count, 0)        AS target_count,
-                cp.primary_platform                  AS primary_platform,
-                la.latest_risk                       AS latest_risk,
-                ca.peak_risk                         AS peak_risk,
-                ca.analyzed_at                       AS analyzed_at,
-                COALESCE(ca.analysis_count, 0)       AS analysis_count
+                COALESCE(ct.target_count, 0)   AS target_count,
+                cp.primary_platform             AS primary_platform,
+                la.latest_risk                  AS latest_risk,
+                ca.peak_risk                    AS peak_risk,
+                ca.analyzed_at                  AS analyzed_at,
+                COALESCE(ca.analysis_count, 0)  AS analysis_count
             FROM cases c
-            LEFT JOIN case_targets   ct ON ct.case_id = c.case_id
-            LEFT JOIN case_platform  cp ON cp.case_id = c.case_id
+            LEFT JOIN case_targets    ct ON ct.case_id = c.case_id
+            LEFT JOIN case_platform   cp ON cp.case_id = c.case_id
             LEFT JOIN latest_analysis la ON la.case_id = c.case_id
-            LEFT JOIN case_analysis  ca ON ca.case_id = c.case_id
+            LEFT JOIN case_analysis   ca ON ca.case_id = c.case_id
             ORDER BY
                 (la.latest_risk IS NULL),
                 la.latest_risk DESC,
@@ -182,7 +212,7 @@ class DatabaseManager:
         return [dict(row) for row in cursor.fetchall()]
 
     def get_case(self, case_id: str):
-        """Get single case by ID (used by /case/{case_id} dossier page)."""
+        """Get single case by ID."""
         cursor = self.get_connection().execute(
             "SELECT * FROM cases WHERE case_id = ?", (case_id,)
         )

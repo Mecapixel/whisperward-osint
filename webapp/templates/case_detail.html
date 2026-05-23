@@ -15,7 +15,6 @@
         display: flex;
         flex-direction: column;
       }
-
       .dossier-topbar {
         display: flex;
         justify-content: space-between;
@@ -35,7 +34,6 @@
       .dossier-topbar a:hover { color: var(--silver-bright); }
       .dossier-topbar .links span { margin-right: 18px; color: var(--silver-dim); }
       .dossier-topbar .links span:hover { color: var(--silver); cursor: pointer; }
-
       .dossier-header {
         display: flex;
         justify-content: space-between;
@@ -63,14 +61,12 @@
         text-shadow: 0 0 8px var(--red-glow);
         box-shadow: 0 0 15px rgba(255, 26, 26, 0.2);
       }
-
       .dossier-body {
         display: grid;
         grid-template-columns: 200px 1fr;
         gap: 40px;
         flex: 1;
       }
-
       .avatar-box {
         border: 1px solid var(--silver-dim);
         background: linear-gradient(180deg, #141414 0%, #050505 100%);
@@ -87,13 +83,10 @@
       .avatar-placeholder {
         width: 100%;
         aspect-ratio: 1;
-        background:
-          repeating-linear-gradient(
+        background: repeating-linear-gradient(
             45deg,
-            #1a1a1a 0px,
-            #1a1a1a 8px,
-            #0a0a0a 8px,
-            #0a0a0a 16px
+            #1a1a1a 0px, #1a1a1a 8px,
+            #0a0a0a 8px, #0a0a0a 16px
           );
         display: flex;
         align-items: center;
@@ -113,7 +106,6 @@
         text-align: center;
         letter-spacing: 2px;
       }
-
       .subject-meta-block {
         margin-top: 14px;
         border: 1px solid var(--silver-dim);
@@ -132,13 +124,11 @@
       .subject-meta-block .meta-row:last-child { border-bottom: none; }
       .subject-meta-block .meta-row .lbl { color: var(--silver-dim); }
       .subject-meta-block .meta-row .val { color: var(--silver-bright); }
-
       .dossier-right {
         display: flex;
         flex-direction: column;
         gap: 4px;
       }
-
       .data-field {
         display: flex;
         justify-content: space-between;
@@ -164,7 +154,6 @@
         color: var(--red-glow);
         text-shadow: 0 0 6px rgba(255, 48, 48, 0.4);
       }
-
       .threat-section {
         margin-top: 14px;
         padding: 14px;
@@ -195,10 +184,8 @@
         inset: 0;
         background: repeating-linear-gradient(
           90deg,
-          rgba(0,0,0,0.3) 0px,
-          rgba(0,0,0,0.3) 2px,
-          transparent 2px,
-          transparent 6px
+          rgba(0,0,0,0.3) 0px, rgba(0,0,0,0.3) 2px,
+          transparent 2px, transparent 6px
         );
       }
       .threat-score {
@@ -208,7 +195,6 @@
         letter-spacing: 3px;
         text-shadow: 0 0 8px rgba(255, 48, 48, 0.4);
       }
-
       .platforms-section { margin-top: 14px; }
       .platform-icons {
         margin-top: 10px;
@@ -230,7 +216,6 @@
         border-color: var(--red-blood);
         text-shadow: 0 0 6px rgba(255, 48, 48, 0.3);
       }
-
       .intel-log-section {
         margin-top: 22px;
         grid-column: 1 / -1;
@@ -253,20 +238,12 @@
         height: 3px;
         background: var(--red-blood);
       }
-      .log-entry {
-        padding: 2px 0;
-        letter-spacing: 1px;
-      }
-      .log-entry::before {
-        content: "> ";
-        color: var(--red-glow);
-      }
+      .log-entry { padding: 2px 0; letter-spacing: 1px; }
+      .log-entry::before { content: "> "; color: var(--red-glow); }
       .blinking-text {
         color: var(--red-glow);
         animation: blink 1s steps(2) infinite;
       }
-
-      /* Override the global overflow:hidden on body so dossier scrolls if needed */
       body { overflow-y: auto !important; }
     </style>
 </head>
@@ -276,9 +253,7 @@
 <div class="dossier-screen">
 
   <div class="dossier-topbar">
-    <div class="links">
-      <a href="/dashboard">← BACK TO REGISTRY</a>
-    </div>
+    <div class="links"><a href="/dashboard">← BACK TO REGISTRY</a></div>
     <div class="links">
       <span>EXPORT</span>
       <span>PRINT</span>
@@ -300,11 +275,19 @@
         <div class="avatar-placeholder">REDACTED</div>
         <div class="avatar-label">SUBJECT VISUAL<br>UNVERIFIED</div>
       </div>
-
       <div class="subject-meta-block">
-        <div class="meta-row"><span class="lbl">CASE</span><span class="val">{{ case.case_id if case else '—' }}</span></div>
-        <div class="meta-row"><span class="lbl">OPENED</span><span class="val">{{ case.created_at[:10] if case and case.created_at else '—' }}</span></div>
-        <div class="meta-row"><span class="lbl">STATUS</span><span class="val" style="color:var(--red-glow)">ACTIVE</span></div>
+        <div class="meta-row">
+          <span class="lbl">CASE</span>
+          <span class="val">{{ case.case_id if case else '—' }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="lbl">OPENED</span>
+          <span class="val">{{ case.created_at[:10] if case and case.created_at else '—' }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="lbl">STATUS</span>
+          <span class="val" style="color:var(--red-glow)">ACTIVE</span>
+        </div>
       </div>
     </div>
 
@@ -340,7 +323,19 @@
         <div class="threat-bar-container">
           <div class="threat-bar"></div>
         </div>
-        <div class="threat-score">RISK SCORE: 5.0 / 10.0</div>
+        <div class="threat-score">
+          RISK SCORE: {{ "%.1f"|format(latest_risk) if latest_risk is not none else "PENDING" }} / 10.0
+          {% if peak_risk and latest_risk and peak_risk > latest_risk %}
+          <span style="display:block; font-size:11px; color:var(--silver-dim); margin-top:6px; letter-spacing:2px;">
+            ▲ PEAKED AT {{ "%.1f"|format(peak_risk) }}
+          </span>
+          {% endif %}
+          {% if analysis_count and analysis_count > 0 %}
+          <span style="display:block; font-size:11px; color:var(--silver-dim); margin-top:4px; letter-spacing:2px;">
+            {{ analysis_count }} ANALYSIS RUN{{ 'S' if analysis_count != 1 else '' }}
+          </span>
+          {% endif %}
+        </div>
       </div>
 
       <div class="platforms-section">
