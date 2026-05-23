@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WHISPERWARD 26 // AUTH</title>
+<link rel="stylesheet" href="/static/css/whisperward.css">
+<style>
+  .landing-screen { padding: 60px 40px; }
+  .classified-panel {
+    max-width: 560px;
+    padding: 40px 50px;
+  }
+  .classified-header { font-size: 26px; margin-bottom: 12px; }
+  .top-secret { font-size: 44px; margin: 16px 0; }
+  .clearance-line { font-size: 20px; margin-bottom: 24px; }
+  .input-row { font-size: 20px; }
+  .input-label { min-width: 110px; }
+  .terminal-input { font-size: 20px; }
+  .auth-btn { font-size: 13px; padding: 14px 28px; }
+  .warning-strip { font-size: 14px; }
+  .divider { margin: 22px 0; }
+</style>
+</head>
+<body>
+<div class="crt-frame"></div>
+
+<div class="landing-screen">
+
+  <div class="classified-panel">
+
+    <div class="classified-header">THE FOLLOWING INFORMATION<br>IS CLASSIFIED:</div>
+
+    <div class="top-secret">TOP SECRET</div>
+
+    <div class="clearance-line">
+      CLEARANCE AUTHORIZATION &nbsp; <span class="level">LEVEL 6</span>
+    </div>
+
+    <hr class="divider">
+
+    <form class="login-form" method="POST" action="/auth">
+      <div class="input-row">
+        <label class="input-label" for="op-id">OPERATOR</label>
+        <input class="terminal-input" id="op-id" name="operator" type="text" value="MECAPIXEL" autocomplete="off">
+      </div>
+      <div class="input-row">
+        <label class="input-label" for="op-key">AUTH KEY</label>
+        <input class="terminal-input" id="op-key" name="auth_key" type="password" placeholder="**********">
+      </div>
+      <div class="input-row">
+        <label class="input-label" for="clearance">CLEARANCE</label>
+        <input class="terminal-input" id="clearance" name="clearance" type="text" value="LVL-6" readonly>
+      </div>
+
+      <button type="submit" class="auth-btn">[ AUTHENTICATE ]</button>
+    </form>
+
+    <div class="warning-strip">
+      &gt; UNAUTHORIZED ACCESS PROHIBITED · 18 U.S.C. § 1030 · ALL ACTIVITY MONITORED
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  document.querySelector('.login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const btn = document.querySelector('.auth-btn');
+    btn.textContent = '[ VERIFYING... ]';
+    setTimeout(() => { window.location.href = '/dashboard'; }, 800);
+  });
+</script>
+
+</body>
+</html>

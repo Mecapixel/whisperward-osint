@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WHISPERWARD 26 // CASE FILES</title>
+<link rel="stylesheet" href="/static/css/whisperward.css">
+<style>
+  /* Small additions specific to the live-data dashboard */
+  .case-pending {
+    font-family: var(--font-display);
+    font-size: 11px;
+    padding: 4px 8px;
+    border: 1px solid var(--silver-dim);
+    color: var(--silver-dim);
+    letter-spacing: 1px;
+  }
+  .peak-indicator {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--red-glow);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+  .demo-banner {
+    background: rgba(212, 160, 23, 0.1);
+    border: 1px solid #d4a017;
+    color: #d4a017;
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    text-align: center;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--silver-dim);
+    font-family: var(--font-mono);
+    font-size: 22px;
+    grid-column: 1 / -1;
+  }
+  .empty-state .cmd {
+    color: var(--red-glow);
+    margin-top: 16px;
+    display: block;
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+<div class="crt-frame"></div>
+
+<div class="dashboard-screen">
+
+  <!-- Top operator strip -->
+  <div class="hud-header">
+    <div class="op-info">
+      &gt; OPERATOR: <span>{{ operator|default('MECAPIXEL') }}</span> &nbsp;|&nbsp;
+      CLEARANCE: <span>LVL-6</span> &nbsp;|&nbsp;
+      SESSION: <span>{{ session_date|default('2026.05.22') }}</span>
+    </div>
+    <div class="session-id">380/BC002</div>
+  </div>
+
+  {% if demo_mode %}
+  <div class="demo-banner">
+    ⚠ DEMO MODE — no real cases in database yet · showing seeded examples
+  </div>
+  {% endif %}
+
+  <!-- HUD frame -->
+  <div class="hud-frame">
+
+    <svg class="hud-svg" viewBox="0 0 1000 600" preserveAspectRatio="none">
+      <polyline points="2,2 850,2 900,40 998,40 998,500 700,500 660,540 660,598 2,598 2,2" />
+      <line x1="20" y1="20" x2="80" y2="20" stroke-width="3" />
+      <line x1="20" y1="28" x2="80" y2="28" stroke-width="3" />
+      <line x1="20" y1="36" x2="60" y2="36" stroke-width="3" />
+      <line x1="20" y1="44" x2="60" y2="44" stroke-width="3" />
+      <line x1="925" y1="40" x2="940" y2="-20" />
+      <circle cx="940" cy="-20" r="4" stroke="var(--silver)" fill="none" />
+      <line x1="680" y1="540" x2="990" y2="540" stroke-width="1" />
+      <line x1="680" y1="550" x2="940" y2="550" stroke-width="1" />
+    </svg>
+
+    <div class="hud-grid-bg"></div>
+
+    <div class="hud-content">
+      <div class="hud-title">CASE REGISTRY // ACTIVE</div>
+      <div class="hud-subtitle">
+        &gt; {{ cases|length }} record{{ 's' if cases|length != 1 else '' }} loaded
+        {% if cases %} · sorted by risk score{% endif %}
+      </div>
+
+      <div class="case-grid">
+
+        {% if cases %}
+          {% for c in cases %}
+          {% set risk = c.latest_risk %}
+          {% set has_analysis = risk is not none %}
+          {% set tier = 'high' if has_analysis and risk >= 4.0 else 'medium' if has_analysis and risk >= 2.5 else 'low' if has_analysis else 'pending' %}
+          {% set peak_higher = c.peak_risk is not none and c.latest_risk is not none and c.peak_risk > c.latest_risk %}
+
+          <div class="case-file {% if tier == 'high' %}flagged{% endif %}"
+               data-case="{{ c.case_id|replace('CASE-', '') }}"
+               data-full-id="{{ c.case_id }}"
+               data-target="{{ c.case_name }}"
+               data-platform="{{ c.primary_platform|upper if c.primary_platform else '—' }}"
+               data-risk="{{ '%.1f'|format(risk) if has_analysis else 'PENDING' }}"
+               data-peak="{{ '%.1f'|format(c.peak_risk) if c.peak_risk else '' }}"
+               data-targets="{{ c.target_count }}"
+               data-analyses="{{ c.analysis_count }}"
+               data-date="{{ c.created_at[:10] if c.created_at else '—' }}"
+               data-analyzed="{{ c.analyzed_at[:10] if c.analyzed_at else '' }}">
+            <div class="case-icon">▮▮▮ FILE {{ '%03d'|format(loop.index) }}</div>
+            <div class="case-id">{{ c.case_id }}</div>
+            <div class="case-target">{{ c.case_name or 'Untitled' }}</div>
+            <div class="case-meta">
+              <span>{{ c.primary_platform|upper if c.primary_platform else '—' }}</span>
+              {% if has_analysis %}
+                <span class="case-risk risk-{{ tier }}">RISK {{ '%.1f'|format(risk) }}</span>
+              {% else %}
+                <span class="case-pending">PENDING</span>
+              {% endif %}
+            </div>
+            {% if peak_higher %}
+            <span class="peak-indicator">▲ peaked at {{ '%.1f'|format(c.peak_risk) }}</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            &gt; NO CASES IN REGISTRY
+            <span class="cmd">$ python whisperward.py create-case --name "Investigation"</span>
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <div class="hud-beam"></div>
+  </div>
+
+</div>
+
+<!-- ============ POP-OUT FILE CARD ============ -->
+<div class="file-popout-overlay" id="popout">
+  <div class="file-card" id="fileCard">
+    <span class="corner tl"></span>
+    <span class="corner tr"></span>
+    <span class="corner bl"></span>
+    <span class="corner br"></span>
+
+    <div class="file-card-label">// CLASSIFIED CASE FILE</div>
+    <div class="file-card-id" id="popId">CASE-XXXXX</div>
+
+    <div class="file-card-row"><span class="label">Case Name</span> <span class="value" id="popTarget">—</span></div>
+    <div class="file-card-row"><span class="label">Platform</span> <span class="value" id="popPlatform">—</span></div>
+    <div class="file-card-row"><span class="label">Targets</span> <span class="value" id="popTargets">—</span></div>
+    <div class="file-card-row"><span class="label">Risk Score</span> <span class="value" id="popScore">—</span></div>
+    <div class="file-card-row" id="popPeakRow" style="display:none;">
+      <span class="label">Peak Risk</span>
+      <span class="value" id="popPeak" style="color:var(--red-glow)">—</span>
+    </div>
+    <div class="file-card-row"><span class="label">Analyses</span> <span class="value" id="popAnalyses">—</span></div>
+    <div class="file-card-row"><span class="label">Opened</span> <span class="value" id="popDate">—</span></div>
+    <div class="file-card-row"><span class="label">Status</span> <span class="value" id="popStatus" style="color:var(--red-glow)">UNDER REVIEW</span></div>
+
+    <div class="file-card-actions">
+      <button class="file-card-btn" onclick="closePopout()">[ CLOSE ]</button>
+      <button class="file-card-btn primary" onclick="openDossier()">[ OPEN DOSSIER ]</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const popout = document.getElementById('popout');
+  const fileCard = document.getElementById('fileCard');
+  let activeFullId = null;
+
+  document.querySelectorAll('.case-file').forEach(file => {
+    file.addEventListener('click', () => {
+      const d = file.dataset;
+      activeFullId = d.fullId;
+
+      document.getElementById('popId').textContent       = d.fullId;
+      document.getElementById('popTarget').textContent   = d.target;
+      document.getElementById('popPlatform').textContent = d.platform;
+      document.getElementById('popTargets').textContent  = d.targets;
+      document.getElementById('popAnalyses').textContent = d.analyses;
+      document.getElementById('popDate').textContent     = d.date;
+
+      if (d.risk === 'PENDING') {
+        document.getElementById('popScore').textContent = 'PENDING ANALYSIS';
+        document.getElementById('popScore').style.color = 'var(--silver-dim)';
+        document.getElementById('popStatus').textContent = 'AWAITING SCAN';
+      } else {
+        document.getElementById('popScore').textContent = d.risk + ' / 10';
+        document.getElementById('popScore').style.color = 'var(--silver-bright)';
+        document.getElementById('popStatus').textContent = 'UNDER REVIEW';
+      }
+
+      const peakRow = document.getElementById('popPeakRow');
+      if (d.peak && d.peak !== d.risk && d.peak !== '') {
+        document.getElementById('popPeak').textContent = d.peak + ' / 10 ▲';
+        peakRow.style.display = 'flex';
+      } else {
+        peakRow.style.display = 'none';
+      }
+
+      fileCard.classList.remove('expanding');
+      popout.classList.add('active');
+    });
+  });
+
+  function closePopout() {
+    popout.classList.remove('active');
+  }
+
+  function openDossier() {
+    fileCard.classList.add('expanding');
+    setTimeout(() => {
+      window.location.href = '/case/' + activeFullId;
+    }, 380);
+  }
+
+  popout.addEventListener('click', (e) => {
+    if (e.target === popout) closePopout();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePopout();
+  });
+</script>
+
+</body>
+</html>

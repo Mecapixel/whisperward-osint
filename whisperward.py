@@ -89,13 +89,27 @@ def analyze(
     console.print(f"[cyan]🧠 Analyzing case {case_id} with AI + RAG...[/cyan]")
     
     text = db.get_text_for_analysis(case_id)
-    results = analyze_text(text, use_ai=ai, case_id=case_id)
-    
     targets = db.get_case_targets(case_id)
+    
+    if not targets:
+        console.print("[red]No targets found for this case.[/red]")
+        return
+    
+    # Analyze and persist per target (so each target gets its own real score)
+    highest_score = 0.0
     for t in targets:
-        db.save_analysis(t["target_id"], results)
+        results = analyze_text(
+            text,
+            use_ai=ai,
+            case_id=case_id,
+            target_id=t["target_id"],
+            db=db,
+        )
+        score = results.get('risk_score', 0.0)
+        if score > highest_score:
+            highest_score = score
 
-    console.print(f"[bold magenta]📊 Risk Score: {results.get('risk_score', 0):.1f}/10[/bold magenta]")
+    console.print(f"[bold magenta]📊 Highest Risk Score: {highest_score:.1f}/10[/bold magenta]")
 
 
 @app.command()

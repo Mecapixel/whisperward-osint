@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WHISPERWARD 26 // BOOT</title>
+<link rel="stylesheet" href="/static/css/whisperward.css">
+</head>
+<body>
+<div class="crt-frame"></div>
+
+<div class="boot-screen">
+
+  <!-- Top-left terminal header -->
+  <div class="boot-header">
+    <div class="terminal-line">Operator: <span style="color:var(--red-glow)">MECAPIXEL</span></div>
+    <div class="terminal-line">Active Cases: <span style="color:var(--red-glow)">5</span></div>
+    <div class="terminal-line">Establishing secure channel<span class="blink">...</span></div>
+  </div>
+
+  <!-- Center: wordmark + loader -->
+  <div class="boot-center">
+    <div class="wordmark">
+      WHISPERWARD<span class="twentysix">26</span>
+    </div>
+
+    <div class="subtitle-jp">MADE IN NEWARK, NJ &nbsp; · &nbsp; CLASSIFIED SYSTEM</div>
+
+    <div class="boot-status">Loading Case Files<span class="blink">..</span></div>
+
+    <div class="load-bar-wrap">
+      <div class="load-bar"></div>
+    </div>
+  </div>
+
+  <!-- Bottom: tagline + watermark -->
+  <div class="boot-footer">'No Safe Place to Prey'</div>
+
+  <div class="wk-mark">WW</div>
+</div>
+
+<script>
+  setTimeout(() => { window.location.href = "/landing"; }, 10000);
+</script>
+
+</body>
+</html>
