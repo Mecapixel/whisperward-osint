@@ -121,7 +121,7 @@ class DatabaseManager:
         cursor = self.get_connection().execute("""
             SELECT
                 MAX(ar.risk_score)    AS peak_risk,
-                COUNT(ar.analysis_id) AS analysis_count
+                COUNT(ar.risk_score)  AS analysis_count
             FROM targets t
             LEFT JOIN analysis_results ar ON ar.target_id = t.target_id
             WHERE t.case_id = ?
@@ -130,7 +130,6 @@ class DatabaseManager:
         if not row or row["peak_risk"] is None:
             return {"latest_risk": None, "peak_risk": None, "analysis_count": 0}
 
-        # Get latest score separately
         cursor2 = self.get_connection().execute("""
             SELECT ar.risk_score
             FROM targets t
@@ -171,9 +170,9 @@ class DatabaseManager:
             case_analysis AS (
                 SELECT
                     t.case_id,
-                    MAX(ar.risk_score)     AS peak_risk,
-                    COUNT(ar.analysis_id)  AS analysis_count,
-                    MAX(ar.completed_at)   AS analyzed_at
+                    MAX(ar.risk_score)    AS peak_risk,
+                    COUNT(ar.risk_score)  AS analysis_count,
+                    MAX(ar.completed_at)  AS analyzed_at
                 FROM targets t
                 LEFT JOIN analysis_results ar ON ar.target_id = t.target_id
                 GROUP BY t.case_id

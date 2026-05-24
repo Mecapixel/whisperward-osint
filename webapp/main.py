@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 import uvicorn
 import sys
 import os
+import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -19,7 +20,6 @@ db = DatabaseManager()
 db.init()
 
 
-# Demo data — shown only when DB is empty (fresh clone, portfolio reviewer)
 DEMO_CASES = [
     {"case_id": "CASE-DEMO0001", "case_name": "Demo: BuilderMan",
      "analyst_name": "MECAPIXEL", "created_at": "2026-05-18 10:00:00",
@@ -47,6 +47,26 @@ DEMO_CASES = [
      "latest_risk": None, "peak_risk": None, "analyzed_at": None,
      "analysis_count": 0},
 ]
+
+
+def get_avatar_for_case(case_id: str):
+    """Pull the Roblox avatar URL from artifacts for the first target in a case."""
+    try:
+        conn = db.get_connection()
+        row = conn.execute(
+            """SELECT a.raw_data
+               FROM artifacts a
+               JOIN targets t ON t.target_id = a.target_id
+               WHERE t.case_id = ? AND a.module_name = 'RobloxOSINT'
+               LIMIT 1""",
+            (case_id,)
+        ).fetchone()
+        if row:
+            data = json.loads(row['raw_data'])
+            return data.get('avatar_url')
+    except Exception as e:
+        print(f"[get_avatar_for_case] error: {e}")
+    return None
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -83,7 +103,7 @@ async def dashboard(request: Request):
         "cases": cases,
         "demo_mode": demo_mode,
         "operator": "MECAPIXEL",
-        "session_date": "2026.05.22",
+        "session_date": "2026.05.24",
     })
 
 
@@ -93,11 +113,12 @@ async def case_detail(request: Request, case_id: str):
     targets = db.get_case_targets(case_id) if case_data else []
     summary = db.get_case_summary(case_id) if case_data else {}
 
-    # Pull real risk score from analysis_results
     risk_data = db.get_case_risk(case_id) if case_data else None
     latest_risk = risk_data["latest_risk"] if risk_data else None
     peak_risk = risk_data["peak_risk"] if risk_data else None
     analysis_count = risk_data["analysis_count"] if risk_data else 0
+
+    avatar_url = get_avatar_for_case(case_id) if case_data else None
 
     return templates.TemplateResponse(request, "case_detail.html", {
         "case": case_data,
@@ -106,6 +127,7 @@ async def case_detail(request: Request, case_id: str):
         "latest_risk": latest_risk,
         "peak_risk": peak_risk,
         "analysis_count": analysis_count,
+        "avatar_url": avatar_url,
     })
 
 
