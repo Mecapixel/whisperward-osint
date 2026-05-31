@@ -1,23 +1,18 @@
 # WhisperWard OSINT - requirements.txt
-# Core (Phase 1)
-typer[all]
-rich
+
+# Core webapp
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
 requests
 aiohttp
 Pillow
 imagehash
 beautifulsoup4
 lxml
-
-# Phase 2 / 3 - AI & Visualization (kept for future)
-reportlab
-ollama
-chromadb
-sentence-transformers
-networkx
-matplotlib
 python-dotenv
-PyExifTool
-
-# Optional / Utilities
 sqlalchemy
+reportlab
+typer[all]
+rich
