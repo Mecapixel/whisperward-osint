@@ -1,6 +1,6 @@
 # WhisperWard OSINT — Ethical & Governance Framework
 
-**Version:** 2.0 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
+**Version:** 2.1 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
 
 This document governs all data collection, analysis, escalation, and retention decisions made by WhisperWard. It is a required artifact for ROOST grant compliance, NCMEC-aligned partnership reviews, and Roblox Trust & Safety evaluations. It is a living document updated with each major release.
 
@@ -18,7 +18,7 @@ Tier 1 (Score 0.0 to 3.9) is logged for monitoring only, scheduled for re-scan p
 
 Tier 2 (Score 4.0 to 6.9) triggers immediate human reviewer notification. The reviewer must acknowledge within 24 hours. The assessment is logged with operator ID and UTC timestamp. No escalation occurs without explicit reviewer approval. Re-assessment is scheduled if the reviewer does not escalate.
 
-Tier 3 (Score 7.0 to 10.0) generates an evidence package automatically. Human sign off is required before the package is filed. Reviewer credentials and acknowledgment are embedded in the PDF manifest. The NCMEC CyberTipline format is pre-populated for reviewer completion. All reviewer actions are logged with operator ID and UTC timestamp. An immutable audit trail is preserved from scan to referral.
+Tier 3 (Score 7.0 to 10.0) generates an evidence package automatically. Human sign-off is required before the package is filed. Reviewer credentials and acknowledgment are embedded in the PDF manifest. The NCMEC CyberTipline format is pre-populated for reviewer completion. All reviewer actions are logged with operator ID and UTC timestamp. An immutable audit trail is preserved from scan to referral.
 
 ## 3. Data Retention Policy
 
@@ -28,7 +28,7 @@ Standard retention: case data is auto-purged after 90 days unless the case has b
 
 Escalated cases are retained for the duration of any active law enforcement engagement plus 30 days after engagement closes.
 
-The retention window is jurisdiction configurable and adjustable per deployment requirements. Configuration is documented in .env and must be reviewed before any non-US deployment.
+The retention window is jurisdiction-configurable and adjustable per deployment requirements. Configuration is documented in .env and must be reviewed before any non-US deployment.
 
 All purge events are logged with UTC timestamp, operator ID, and case ID. Deletion cannot be undone. The audit log of the deletion is itself retained for 1 year.
 
@@ -36,7 +36,7 @@ All purge events are logged with UTC timestamp, operator ID, and case ID. Deleti
 
 The grooming classifier and age estimation module are audited for demographic bias on each major release.
 
-Bias testing evaluates performance across gender, geography, and linguistic register proxies available through public behavioral metadata. No protected class data is collected directly proxies only.
+Bias testing evaluates performance across gender, geography, and linguistic register proxies available through public behavioral metadata. No protected-class data is collected directly — proxies only.
 
 If any demographic proxy group shows a false positive rate more than 5 percentage points above the baseline rate, the release is blocked until the disparity is resolved.
 
@@ -62,11 +62,11 @@ Registration status as of June 2026: NCMEC outreach sent to techcoalition@ncmec.
 
 ## 7. Approved Data Sources
 
-WhisperWard collects data only from public Roblox and Discord profiles and metadata via official platform APIs, public game and server discovery signals surfaced through platform APIs, platform surfaced chat content through authorized Trust and Safety integrations only, public friend and follower graphs and activity timing patterns, public IP metadata surfaced by platforms enriched at city level only via MaxMind GeoLite2, perceptual hashes of public profile avatars, and public Sherlock-indexed platform username presence signals.
+WhisperWard collects data only from public Roblox and Discord profiles and metadata via official platform APIs, public game and server discovery signals surfaced through platform APIs, platform-surfaced chat content through authorized Trust and Safety integrations only, public friend and follower graphs and activity timing patterns, public IP metadata surfaced by platforms enriched at city-level only via MaxMind GeoLite2, perceptual hashes of public profile avatars, and public Sherlock-indexed platform username presence signals.
 
 ## 8. Non-Goals & Prohibited Uses
 
-The following are explicitly out of scope and will never be implemented: private message interception or communication surveillance of any kind, keystroke capture or device-level monitoring, street address or precise geolocation of any individual, autonomous CyberTipline filing or autonomous law enforcement action, storage of matched CSAM image content, any direct interaction with accounts showing signs of belonging to real minors, real time active monitoring or engagement within predatory spaces, and profiling based on race, religion, gender, sexual orientation, or national origin.
+The following are explicitly out of scope and will never be implemented: private message interception or communication surveillance of any kind, keystroke capture or device-level monitoring, street-address or precise geolocation of any individual, autonomous CyberTipline filing or autonomous law enforcement action, storage of matched CSAM image content, any direct interaction with accounts showing signs of belonging to real minors, real-time active monitoring or engagement within predatory spaces, and profiling based on race, religion, gender, sexual orientation, or national origin.
 
 ## 9. Synthetic Data Policy
 
@@ -82,13 +82,46 @@ WhisperWard must be hardened against abuse by bad actors attempting to weaponize
 
 All username and account inputs are sanitized before API calls. SQL injection and prompt injection vectors are explicitly tested in the test suite.
 
-LLM components are hardened against adversarial inputs designed to manipulate risk score output. System prompts are not user modifiable.
+LLM components are hardened against adversarial inputs designed to manipulate risk score output. System prompts are not user-modifiable.
 
-Token bucket rate limiting on all FastAPI endpoints prevents bulk automated abuse of the scanning interface.
+Token-bucket rate limiting on all FastAPI endpoints prevents bulk automated abuse of the scanning interface.
 
 The web UI requires authenticated analyst login before any scan can be initiated. Unauthenticated access returns no data.
 
 A documented channel exists for platforms and researchers to report false positives or request signal review. Contact information is in README.md.
+
+## 11. Grooming Classifier Governance
+
+WhisperWard's grooming pattern classifier (`behavioral_classifier.py`) detects communication patterns associated with online child exploitation. This section documents its design constraints, data sourcing, and governance boundaries.
+
+### Pattern Sources
+
+All grooming patterns in the classifier are derived exclusively from public domain sources:
+
+- Federal ICAC prosecution records (public court documents)
+- NCMEC published research on online enticement patterns
+- Thorn technical reports on predator communication methodology
+- Internet Watch Foundation behavioral documentation
+
+No real chat logs, no real victim communications, and no private law enforcement databases were used in classifier development.
+
+### False Positive Policy
+
+The classifier is a first-pass signal generator, not a decision-making system. Every positive classification must pass through human review before any action is taken. The classifier explicitly returns a Decision value of ALLOW, REVIEW, or ESCALATE — escalation never triggers autonomous action.
+
+If any demographic proxy group shows a false positive rate more than 5 percentage points above the baseline rate in bias testing, the release is blocked.
+
+### Negation Filtering
+
+The classifier applies negation context filters to reduce false positives on educational content, safety training materials, moderation logs, and research documentation. Messages matching negation patterns are excluded from scoring.
+
+### Sequence Awareness
+
+Grooming is a process, not a single phrase. The classifier applies a sequence bonus when multiple pattern categories appear across a conversation, reflecting the multi-step nature of grooming behavior documented in NCMEC and Thorn research.
+
+### Classifier Limitations
+
+The classifier is a rule-based heuristic. It is not a probabilistic model and its scores are not probabilities. It is designed to surface cases for human review, not to make enforcement decisions autonomously. It should be paired with AI behavioral analysis, cross-platform correlation, and human analyst judgment before any escalation action is taken.
 
 ---
 
