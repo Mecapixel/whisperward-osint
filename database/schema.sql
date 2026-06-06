@@ -1,6 +1,6 @@
 -- WhisperWard OSINT - Database Schema
 -- Run: sqlite3 whisperward.db < schema.sql
--- All 5 tables with indexes for performance
+-- All tables with indexes for performance
 
 -- ============================================================
 -- Cases
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS targets (
 );
 
 -- ============================================================
--- Artifacts (raw evidence — never modify after intake)
+-- Artifacts (raw evidence — immutable after intake)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS artifacts (
     artifact_id    INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS artifacts (
 );
 
 -- ============================================================
--- Evidence Log (chain of custody — every action logged)
+-- Evidence Log (chain of custody)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS evidence_log (
     log_id      INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS evidence_log (
 );
 
 -- ============================================================
--- Analysis Results (separate from raw artifacts)
+-- Analysis Results
 -- ============================================================
 CREATE TABLE IF NOT EXISTS analysis_results (
     result_id     INTEGER PRIMARY KEY AUTOINCREMENT,

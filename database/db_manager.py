@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 WhisperWard OSINT - Database Manager
-Phase 5 update: get_all_cases() returns latest_risk + peak_risk
-Phase 5 update: get_case_risk() added for dossier page
+Phase 4 - Updated for analyzed_at column consistency
 """
+
 import sqlite3
 import json
 import hashlib
@@ -28,7 +28,7 @@ class DatabaseManager:
         if not schema_path.exists():
             raise FileNotFoundError(f"Schema file not found: {schema_path}")
         conn = self.get_connection()
-        with open(schema_path, 'r') as f:
+        with open(schema_path, 'r', encoding='utf-8') as f:
             conn.executescript(f.read())
         conn.commit()
         print("Database initialized successfully.")
@@ -61,7 +61,8 @@ class DatabaseManager:
         sha256 = hashlib.sha256(json.dumps(raw_data, default=str).encode()).hexdigest()
         conn = self.get_connection()
         cursor = conn.execute(
-            "INSERT INTO artifacts (target_id, module_name, artifact_type, raw_data, processed_data, file_path, sha256) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO artifacts (target_id, module_name, artifact_type, raw_data, processed_data, file_path, sha256) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (target_id, module_name, artifact_type,
              json.dumps(raw_data, default=str),
              json.dumps(processed_data, default=str) if processed_data else None,
@@ -84,10 +85,10 @@ class DatabaseManager:
         return "\n\n".join(filter(None, texts)) or "No text content available."
 
     def save_analysis(self, target_id: int, results: Dict):
-        """Persist analysis results including risk_score and timestamp."""
         conn = self.get_connection()
         conn.execute(
-            "INSERT INTO analysis_results (target_id, analysis_type, findings, risk_score, analyst_notes) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO analysis_results (target_id, analysis_type, findings, risk_score, analyst_notes) "
+            "VALUES (?, ?, ?, ?, ?)",
             (target_id,
              results.get('analysis_type', 'behavioral'),
              json.dumps(results.get('findings', {})),
@@ -117,7 +118,7 @@ class DatabaseManager:
         }
 
     def get_case_risk(self, case_id: str) -> Dict:
-        """Get latest and peak risk scores for a case (used by dossier page)."""
+        """Get latest and peak risk scores for a case."""
         cursor = self.get_connection().execute("""
             SELECT
                 MAX(ar.risk_score)    AS peak_risk,
@@ -127,18 +128,21 @@ class DatabaseManager:
             WHERE t.case_id = ?
         """, (case_id,))
         row = cursor.fetchone()
+
         if not row or row["peak_risk"] is None:
             return {"latest_risk": None, "peak_risk": None, "analysis_count": 0}
 
+        # Get latest risk
         cursor2 = self.get_connection().execute("""
             SELECT ar.risk_score
             FROM targets t
             JOIN analysis_results ar ON ar.target_id = t.target_id
             WHERE t.case_id = ?
-            ORDER BY ar.completed_at DESC
+            ORDER BY ar.analyzed_at DESC
             LIMIT 1
         """, (case_id,))
         latest_row = cursor2.fetchone()
+
         return {
             "latest_risk": latest_row["risk_score"] if latest_row else None,
             "peak_risk": row["peak_risk"],
@@ -146,11 +150,7 @@ class DatabaseManager:
         }
 
     def get_all_cases(self):
-        """
-        Get all cases for the dashboard.
-        Returns: case_id, case_name, analyst_name, created_at, target_count,
-        primary_platform, latest_risk, peak_risk, analyzed_at, analysis_count
-        """
+        """Get all cases for the dashboard."""
         cursor = self.get_connection().execute("""
             WITH case_targets AS (
                 SELECT case_id, COUNT(*) AS target_count
@@ -172,7 +172,7 @@ class DatabaseManager:
                     t.case_id,
                     MAX(ar.risk_score)    AS peak_risk,
                     COUNT(ar.risk_score)  AS analysis_count,
-                    MAX(ar.completed_at)  AS analyzed_at
+                    MAX(ar.analyzed_at)   AS analyzed_at
                 FROM targets t
                 LEFT JOIN analysis_results ar ON ar.target_id = t.target_id
                 GROUP BY t.case_id
@@ -180,8 +180,8 @@ class DatabaseManager:
             latest_analysis AS (
                 SELECT case_id, risk_score AS latest_risk
                 FROM (
-                    SELECT t.case_id, ar.risk_score, ar.completed_at,
-                           ROW_NUMBER() OVER (PARTITION BY t.case_id ORDER BY ar.completed_at DESC) AS rn
+                    SELECT t.case_id, ar.risk_score, ar.analyzed_at,
+                           ROW_NUMBER() OVER (PARTITION BY t.case_id ORDER BY ar.analyzed_at DESC) AS rn
                     FROM targets t
                     JOIN analysis_results ar ON ar.target_id = t.target_id
                 )
@@ -193,11 +193,11 @@ class DatabaseManager:
                 c.analyst_name,
                 c.created_at,
                 COALESCE(ct.target_count, 0)   AS target_count,
-                cp.primary_platform             AS primary_platform,
-                la.latest_risk                  AS latest_risk,
-                ca.peak_risk                    AS peak_risk,
-                ca.analyzed_at                  AS analyzed_at,
-                COALESCE(ca.analysis_count, 0)  AS analysis_count
+                cp.primary_platform            AS primary_platform,
+                la.latest_risk                 AS latest_risk,
+                ca.peak_risk                   AS peak_risk,
+                ca.analyzed_at                 AS analyzed_at,
+                COALESCE(ca.analysis_count, 0) AS analysis_count
             FROM cases c
             LEFT JOIN case_targets    ct ON ct.case_id = c.case_id
             LEFT JOIN case_platform   cp ON cp.case_id = c.case_id
