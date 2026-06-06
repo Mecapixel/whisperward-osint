@@ -1,4 +1,5 @@
 # WhisperWard OSINT - requirements.txt
+# Updated: June 2026 | Phase 4 Milestone 0
 
 # Core webapp
 fastapi
@@ -16,3 +17,39 @@ sqlalchemy
 reportlab
 typer[all]
 rich
+
+# Phase 4 — Rate limiting
+pyrate-limiter
+
+# Phase 4 — Fuzzy matching and correlation
+rapidfuzz
+
+# Phase 4 — Social graph analysis
+networkx
+
+# Phase 4 — Writing style fingerprinting
+sentence-transformers
+
+# Phase 4 — IP enrichment and geolocation
+geoip2
+
+# Phase 4 — PDF digital signing
+pyhanko
+pyhanko-certvalidator
+
+# Phase 4 — Structured immutable logging
+structlog
+
+# Phase 4 — Synthetic data generation
+faker
+
+# Phase 4 — Test suite
+pytest
+pytest-asyncio
+
+# Phase 4 — Circuit breaker pattern
+pybreaker
+
+# Phase 4 — CSAM hash detection (already installed)
+# imagehash already listed above
+# Pillow already listed above

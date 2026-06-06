@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+.git
+.gitignore
+.env
+.env.*
+__pycache__
+.pytest_cache
+test_suite_results/
+synthetic_test_profiles/
+*.md
+01_Docs/
+04_Cases/
+05_Grant_Application/

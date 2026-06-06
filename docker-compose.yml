@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  whisperward:
+    build: .
+    container_name: whisperward
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
