@@ -1,6 +1,6 @@
 # WhisperWard OSINT — Ethical & Governance Framework
 
-**Version:** 2.1 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
+**Version:** 2.2 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
 
 This document governs all data collection, analysis, escalation, and retention decisions made by WhisperWard. It is a required artifact for ROOST grant compliance, NCMEC-aligned partnership reviews, and Roblox Trust & Safety evaluations. It is a living document updated with each major release.
 
@@ -14,11 +14,13 @@ Reviewer qualification requirement: background-checked analyst with documented I
 
 ## 2. Reviewer Workflow
 
-Tier 1 (Score 0.0 to 3.9) is logged for monitoring only, scheduled for re-scan per retention policy, and generates no notification.
+Tier thresholds were calibrated in June 2026 against a seed-42 balanced synthetic evaluation dataset via threshold sweep, and are recalibrated with each major release. Calibration reports are retained in the reports directory and version history is maintained in the GitHub commit log.
 
-Tier 2 (Score 4.0 to 6.9) triggers immediate human reviewer notification. The reviewer must acknowledge within 24 hours. The assessment is logged with operator ID and UTC timestamp. No escalation occurs without explicit reviewer approval. Re-assessment is scheduled if the reviewer does not escalate.
+Tier 1 (Score 0.0 to 1.9) is logged for monitoring only, scheduled for re-scan per retention policy, and generates no notification.
 
-Tier 3 (Score 7.0 to 10.0) generates an evidence package automatically. Human sign-off is required before the package is filed. Reviewer credentials and acknowledgment are embedded in the PDF manifest. The NCMEC CyberTipline format is pre-populated for reviewer completion. All reviewer actions are logged with operator ID and UTC timestamp. An immutable audit trail is preserved from scan to referral.
+Tier 2 (Score 2.0 to 6.9) triggers immediate human reviewer notification. The reviewer must acknowledge within 24 hours. The assessment is logged with operator ID and UTC timestamp. No escalation occurs without explicit reviewer approval. Re-assessment is scheduled if the reviewer does not escalate.
+
+Tier 3 (Score 7.0 to 10.0) generates an evidence package automatically. Human sign-off is required before the package is filed. Reviewer credentials and acknowledgment are embedded in the PDF manifest. The NCMEC CyberTipline format is pre-populated for reviewer completion. All reviewer actions are logged with operator ID and UTC timestamp. An immutable audit trail is preserved from scan to referral. The Tier 3 boundary is intentionally set above the maximum score reachable from single-platform signals alone, so evidence-package generation requires corroborating cross-platform or historical evidence.
 
 ## 3. Data Retention Policy
 

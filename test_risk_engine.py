@@ -69,7 +69,7 @@ class TestRiskEngine:
     def test_safe_signals_low_score(self):
         engine = RiskEngine()
         result = engine.score(SAFE_SIGNALS)
-        assert result.risk_score < 4.0
+        assert result.risk_score < 2.0
         assert result.tier == Tier.TIER_1
 
     def test_threat_signals_high_score(self):
@@ -82,14 +82,13 @@ class TestRiskEngine:
     def test_edge_signals_tier_2(self):
         engine = RiskEngine()
         result = engine.score(EDGE_SIGNALS)
-        assert result.risk_score >= 4.0
-        assert result.risk_score < 7.0
+        assert 2.0 <= result.risk_score < 7.0
         assert result.tier == Tier.TIER_2
 
     def test_tier_mapping(self):
         assert score_to_tier(0.0) == Tier.TIER_1
-        assert score_to_tier(3.9) == Tier.TIER_1
-        assert score_to_tier(4.0) == Tier.TIER_2
+        assert score_to_tier(1.9) == Tier.TIER_1
+        assert score_to_tier(2.0) == Tier.TIER_2
         assert score_to_tier(6.9) == Tier.TIER_2
         assert score_to_tier(7.0) == Tier.TIER_3
         assert score_to_tier(10.0) == Tier.TIER_3

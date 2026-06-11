@@ -1,10 +1,13 @@
 # WhisperWard OSINT — Synthetic Test Cases
 
-**Version:** 4.0 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
+**Version:** 4.1 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
 
 All profiles below are entirely fabricated. No real users, no real children,
 no real predator accounts. These exist solely for validation of the risk engine
 and grooming classifier. All usernames, IDs, and chat content are invented.
+
+Tier ranges reflect the June 2026 threshold calibration performed against a
+seed-42 balanced synthetic evaluation dataset.
 
 ---
 
@@ -12,7 +15,7 @@ and grooming classifier. All usernames, IDs, and chat content are invented.
 
 **Profile ID:** SYNTH-SAFE-001
 **Expected Risk Score:** 1.2 / 10
-**Expected Tier:** Tier 1 — Monitor Only
+**Expected Tier:** Tier 1 — Monitor Only (0.0 to 1.9)
 
 **Profile Summary:**
 Synthetic Roblox account with normal usage patterns. Account age of 400 days,
@@ -39,7 +42,7 @@ No analyst action required.
 
 **Profile ID:** SYNTH-EDGE-001
 **Expected Risk Score:** 5.1 / 10
-**Expected Tier:** Tier 2 — Human Review Required
+**Expected Tier:** Tier 2 — Human Review Required (2.0 to 6.9)
 
 **Profile Summary:**
 Synthetic account 20 days old with 200 friends, active predominantly late at
@@ -67,7 +70,7 @@ acknowledge within 24 hours. No escalation without explicit reviewer approval.
 
 **Profile ID:** SYNTH-THREAT-001
 **Expected Risk Score:** 8.7 / 10
-**Expected Tier:** Tier 3 — Escalate
+**Expected Tier:** Tier 3 — Escalate (7.0 to 10.0)
 
 **Profile Summary:**
 Synthetic account 5 days old with 300 friends, active late at night, routing
