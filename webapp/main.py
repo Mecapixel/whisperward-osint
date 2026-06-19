@@ -71,7 +71,12 @@ def get_avatar_for_case(case_id: str):
 
 @app.get("/", response_class=HTMLResponse)
 async def boot(request: Request):
-    return templates.TemplateResponse(request, "boot.html")
+    try:
+        case_count = len(db.get_all_cases())
+    except Exception as e:
+        print(f"[boot] get_all_cases failed: {e}")
+        case_count = 0
+    return templates.TemplateResponse(request, "boot.html", {"case_count": case_count})
 
 
 @app.get("/landing", response_class=HTMLResponse)
