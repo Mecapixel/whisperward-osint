@@ -1,6 +1,6 @@
 # WhisperWard OSINT — Ethical & Governance Framework
 
-**Version:** 2.2 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
+**Version:** 2.3 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
 
 This document governs all data collection, analysis, escalation, and retention decisions made by WhisperWard. It is a required artifact for ROOST grant compliance, NCMEC-aligned partnership reviews, and Roblox Trust & Safety evaluations. It is a living document updated with each major release.
 
@@ -64,7 +64,7 @@ Registration status as of June 2026: NCMEC outreach sent to techcoalition@ncmec.
 
 ## 7. Approved Data Sources
 
-WhisperWard collects data only from public Roblox and Discord profiles and metadata via official platform APIs, public game and server discovery signals surfaced through platform APIs, platform-surfaced chat content through authorized Trust and Safety integrations only, public friend and follower graphs and activity timing patterns, public IP metadata surfaced by platforms enriched at city-level only via MaxMind GeoLite2, perceptual hashes of public profile avatars, and public Sherlock-indexed platform username presence signals.
+WhisperWard collects data only from public Roblox and Discord profiles and metadata via official platform APIs, public game and server discovery signals surfaced through platform APIs, platform-surfaced chat content through authorized Trust and Safety integrations only, public friend and follower graphs and activity timing patterns, public IP metadata surfaced by platforms enriched entirely offline via local databases as described in Section 12, perceptual hashes of public profile avatars, and public Sherlock-indexed platform username presence signals.
 
 ## 8. Non-Goals & Prohibited Uses
 
@@ -124,6 +124,44 @@ Grooming is a process, not a single phrase. The classifier applies a sequence bo
 ### Classifier Limitations
 
 The classifier is a rule-based heuristic. It is not a probabilistic model and its scores are not probabilities. It is designed to surface cases for human review, not to make enforcement decisions autonomously. It should be paired with AI behavioral analysis, cross-platform correlation, and human analyst judgment before any escalation action is taken.
+
+## 12. IP Enrichment Data Flow and Privacy Boundary
+
+This section governs the IP enrichment capability introduced in Milestone 4. It documents exactly what data is and is not transmitted to any third party at each stage of the process, so that the privacy posture can be verified rather than taken on trust. The governing principle is that during active casework, an IP address under investigation never leaves the analyst's machine.
+
+### Intake Boundary
+
+The enrichment module operates only on IP addresses that an investigator has deliberately entered into a case. It does not harvest addresses on its own, and the public Roblox and Discord interfaces that WhisperWard consumes do not expose them. Every address reaching enrichment arrives by explicit analyst action, which is why the capability does not expand the tool's collection scope.
+
+### Local-Only Enrichment
+
+All enrichment lookups are performed offline against local databases. Geolocation is resolved from local MaxMind GeoLite2 City and ASN database files. Anonymization signals are drawn from a local IP2Proxy LITE database, a cached copy of the Tor Project's public exit node list, and a curated ASN authority file maintained by the operator. No suspect address is transmitted to any external service during enrichment. If a database is absent the affected source is recorded as unavailable and enrichment continues with whatever remains, so a missing database lowers completeness without ever sending data off the machine to compensate.
+
+### The Single Outbound Call
+
+The only network activity associated with this capability lives in a separate maintenance script (update_threat_lists.py) that refreshes the Tor exit list between cases. That script is never run during an active lookup. When it runs it downloads a public list by its own request and sends no case data of any kind. It transmits nothing about any subject, any address under investigation, or any case. The refresh is a one-directional download of public information. The credentialed MaxMind and IP2Proxy databases are never downloaded automatically, because doing so would require handling account credentials; the operator obtains those files manually and the script only reports whether they are present and current.
+
+### Per-Stage Data Flow
+
+The table below states, for each stage, what leaves the machine. The honest summary is that during casework nothing leaves it.
+
+| Stage | Action | Data sent to a third party |
+| --- | --- | --- |
+| Intake | Investigator enters an IP into a case | None |
+| Geolocation lookup | Local GeoLite2 City and ASN database query | None |
+| Proxy and VPN lookup | Local IP2Proxy LITE database query | None |
+| Tor exit detection | Comparison against the locally cached exit list | None |
+| ASN classification | Comparison against the local curated authority file | None |
+| Custody logging | Record written locally with database hashes | None |
+| Threat list refresh | Maintenance script downloads the public Tor list between cases | The request is made, but no case data, no subject data, and no investigated address is included |
+
+### Provenance and Auditability
+
+Every enrichment lookup produces a chain of custody record capturing the UTC timestamp, the input address, the complete structured output, and the version, age, and SHA-256 hash of every database consulted, along with any sources that were absent. The Tor list refresh additionally records the fetch time, the validation time, the source URL, the entry count, and the SHA-256 of the installed list. Because the enricher independently hashes the same file when it loads it, the custody record and the refresh metadata can be checked against each other, giving two independent confirmations of which threat list snapshot produced a given result.
+
+### Authority File Discipline
+
+The curated ASN file is treated as an authority rather than a reference list. The enrichment engine asserts only two categories, known-vpn and hosting-datacenter. A file containing any other category, a missing required field, or a duplicate entry is rejected. In the default strict configuration this rejection prevents the pipeline from starting, so a case is never run against malformed authority data. The operator is expected to validate the file after every edit using the refresh script, which surfaces any problem before the next case rather than during it. Entries in the file are seed classifications subject to analyst review, and the engine outputs a confidence score with a written rationale rather than asserting that any individual address is anonymizing. A qualified human confirms every conclusion.
 
 ---
 

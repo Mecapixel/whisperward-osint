@@ -1,6 +1,6 @@
 # WhisperWard OSINT — Policy Boundary & Scope
 
-**Version:** 1.0 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
+**Version:** 1.1 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
 
 WhisperWard is a public-signal threat-hunting and case-preparation intelligence tool focused on protecting minors on platforms like Roblox and Discord. This document defines what WhisperWard is, what it is not, and the non-negotiable operational constraints that govern every aspect of its design and use.
 
@@ -24,8 +24,8 @@ The following sources are in scope for WhisperWard data collection:
 - Public game and server discovery signals surfaced through platform APIs
 - Platform-surfaced chat content through authorized Trust and Safety integrations only
 - Public friend and follower graphs and activity timing patterns
-- Public IP metadata surfaced by platforms, with offline enrichment at city-level only
-- Perceptual hashes of public profile avatars using local processing and approved external hash services
+- Public IP metadata surfaced by platforms, enriched entirely offline against local databases (city-level geolocation, ASN, proxy, and Tor classification) with no investigated address ever transmitted to a third party
+- Perceptual hashes of public profile avatars using local processing only
 - Public Sherlock-indexed platform username presence signals
 
 ---
@@ -61,13 +61,15 @@ All reviewer actions are logged with operator ID and UTC timestamp. The audit tr
 
 ## Reviewer Workflow
 
+Tier thresholds reflect the June 2026 calibration against the seed-42 balanced synthetic evaluation dataset and are kept in sync with the values enforced in code and documented in the Ethical & Governance Framework.
+
 ```
-Tier 1 (Score 0.0 – 3.9)
+Tier 1 (Score 0.0 – 1.9)
   └── Logged for monitoring only
   └── Scheduled for re-scan
   └── No notification generated
 
-Tier 2 (Score 4.0 – 6.9)
+Tier 2 (Score 2.0 – 6.9)
   └── Human reviewer notified
   └── Reviewer must acknowledge within 24 hours
   └── Reviewer assessment logged with operator ID + timestamp
@@ -79,6 +81,20 @@ Tier 3 (Score 7.0 – 10.0)
   └── Reviewer credentials and acknowledgment embedded in package manifest
   └── NCMEC CyberTipline format pre-populated — never auto-submitted
 ```
+
+---
+
+## IP Enrichment Network Boundary
+
+WhisperWard's IP enrichment capability is offline by design. The following boundary is enforced in code and verified by the test suite.
+
+During active casework, an IP address under investigation never leaves the machine. All geolocation, proxy, VPN, and Tor detection is performed against local database files. No address, no subject information, and no case data is transmitted to any third party at any stage of enrichment.
+
+The capability enriches only addresses an investigator has deliberately entered into a case. It does not harvest addresses, and it does not expand collection scope.
+
+The single exception to offline operation is a separate maintenance script that refreshes the public Tor exit node list between cases. This script is never run during a lookup. When it runs it downloads a public list and sends no case data, no subject data, and no investigated address. It is a one-directional download of public information.
+
+The credentialed geolocation and proxy databases are never downloaded automatically by the tool, because doing so would require handling account credentials. The operator obtains those files manually and places them in the local data directory. The tool reports whether they are present and current but never fetches them.
 
 ---
 
