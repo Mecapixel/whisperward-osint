@@ -1,0 +1,105 @@
+{
+  "_comment": "WhisperWard curated ASN authority file. This is an authority, not a reference list. The enrichment engine asserts only the categories known-vpn and hosting-datacenter, spelled exactly. Any other category, or a missing one, makes the pipeline refuse to start in strict mode, which is the default. After every edit run python update_threat_lists.py to validate this file before your next case. The enricher reads only asn, organization, category, and source. The confidence field is analyst-only context and is ignored by the engine. These entries are seed candidates and should each be reviewed before being treated as settled authority, since ASN ownership and provider roles change over time. Do not add an ASN more than once, the loader keys on asn and a later duplicate silently overwrites the earlier one.",
+  "_categories": [
+    "known-vpn",
+    "hosting-datacenter"
+  ],
+  "_confidence_values": [
+    "high",
+    "moderate",
+    "candidate"
+  ],
+  "asns": [
+    {
+      "asn": 14061,
+      "organization": "DigitalOcean LLC",
+      "category": "hosting-datacenter",
+      "confidence": "high",
+      "source": "major cloud hosting provider, frequently observed origin for automated and hosted traffic"
+    },
+    {
+      "asn": 16509,
+      "organization": "Amazon AWS (EC2)",
+      "category": "hosting-datacenter",
+      "confidence": "high",
+      "source": "major cloud compute provider, hosts both benign and abusive workloads"
+    },
+    {
+      "asn": 14618,
+      "organization": "Amazon AWS (EC2 us-east)",
+      "category": "hosting-datacenter",
+      "confidence": "high",
+      "source": "major cloud compute provider, hosts both benign and abusive workloads"
+    },
+    {
+      "asn": 8075,
+      "organization": "Microsoft Azure",
+      "category": "hosting-datacenter",
+      "confidence": "high",
+      "source": "major cloud compute provider, hosts both benign and abusive workloads"
+    },
+    {
+      "asn": 396982,
+      "organization": "Google Cloud Platform",
+      "category": "hosting-datacenter",
+      "confidence": "high",
+      "source": "major cloud compute provider, hosts both benign and abusive workloads"
+    },
+    {
+      "asn": 20473,
+      "organization": "The Constant Company (Vultr)",
+      "category": "hosting-datacenter",
+      "confidence": "high",
+      "source": "low-cost VPS provider, frequently observed in automated and proxy traffic"
+    },
+    {
+      "asn": 63949,
+      "organization": "Akamai Connected Cloud (Linode)",
+      "category": "hosting-datacenter",
+      "confidence": "high",
+      "source": "VPS hosting provider, frequently observed in automated traffic"
+    },
+    {
+      "asn": 24940,
+      "organization": "Hetzner Online GmbH",
+      "category": "hosting-datacenter",
+      "confidence": "high",
+      "source": "European dedicated and cloud hosting provider, common automated traffic origin"
+    },
+    {
+      "asn": 16276,
+      "organization": "OVH SAS",
+      "category": "hosting-datacenter",
+      "confidence": "high",
+      "source": "European hosting provider, common automated traffic origin"
+    },
+    {
+      "asn": 51167,
+      "organization": "Contabo GmbH",
+      "category": "hosting-datacenter",
+      "confidence": "moderate",
+      "source": "low-cost VPS provider, frequently observed in proxy and abuse reports"
+    },
+    {
+      "asn": 60781,
+      "organization": "LeaseWeb Netherlands B.V.",
+      "category": "hosting-datacenter",
+      "confidence": "moderate",
+      "source": "hosting provider, mixed-use infrastructure, review per case"
+    },
+    {
+      "asn": 9009,
+      "organization": "M247 Europe SRL",
+      "category": "known-vpn",
+      "confidence": "high",
+      "source": "network heavily used by commercial VPN exit infrastructure, frequently observed as VPN egress"
+    },
+    {
+      "asn": 212238,
+      "organization": "Datacamp Limited (CDN77 / DataPacket)",
+      "category": "known-vpn",
+      "confidence": "moderate",
+      "source": "network associated with commercial VPN exit infrastructure, verify per case"
+    }
+  ]
+}

@@ -259,24 +259,60 @@ def validate_asn_set_data(raw) -> list:
     of human readable error strings, empty when the data is clean. This is the
     single place the category policy is enforced, so both the loader and the
     standalone preflight share identical rules and the file is parsed only once
-    per use."""
+    per use.
+
+    Because the file is an authority rather than a reference list, the schema is
+    enforced strictly. Each entry must carry asn, organization, category, and
+    source, and may optionally carry a confidence value that the engine ignores.
+    Any other field is rejected so that schema drift cannot quietly enter the
+    authority file. Duplicate ASN values are rejected rather than silently
+    overwritten, because in an authority file a duplicate is an authoring error,
+    not a last write wins update."""
     errors = []
     entries = raw.get("asns", raw) if isinstance(raw, dict) else raw
     if not isinstance(entries, list):
         return ["ASN authority file does not contain a list of entries."]
 
+    allowed_keys = {"asn", "organization", "category", "source", "confidence"}
+    seen_asns = set()
+
     for index, entry in enumerate(entries):
         if not isinstance(entry, dict):
             errors.append("Entry " + str(index) + " is not an object.")
             continue
-        if entry.get("asn") is None:
+
+        extra_keys = set(entry.keys()) - allowed_keys
+        if extra_keys:
+            errors.append("Entry " + str(index) + " has unrecognized fields: "
+                          + ", ".join(sorted(extra_keys)) + ".")
+
+        asn = entry.get("asn")
+        if asn is None:
             errors.append("Entry " + str(index) + " is missing an asn value.")
+        else:
+            try:
+                asn_int = int(asn)
+                if asn_int in seen_asns:
+                    errors.append("Entry " + str(index) + " is a duplicate of asn "
+                                  + str(asn_int) + ", which already appears earlier in the file.")
+                seen_asns.add(asn_int)
+            except (ValueError, TypeError):
+                errors.append("Entry " + str(index) + " has a non numeric asn value: "
+                              + str(asn) + ".")
+
+        if entry.get("organization") in (None, ""):
+            errors.append("Entry " + str(index) + " is missing an organization value.")
+
+        if entry.get("source") in (None, ""):
+            errors.append("Entry " + str(index) + " is missing a source value.")
+
         category = entry.get("category")
         if category not in RECOGNIZED_ASN_CATEGORIES:
             errors.append(
                 "Entry " + str(index) + " (asn " + str(entry.get("asn"))
                 + ") has unrecognized category '" + str(category)
                 + "'. Recognized categories are " + " and ".join(RECOGNIZED_ASN_CATEGORIES) + ".")
+
     return errors
 
 

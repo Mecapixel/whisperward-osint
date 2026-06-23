@@ -74,3 +74,8 @@ sherlock/
 
 # AI / RAG storage
 knowledge_base/chroma/
+# M4 generated threat data
+data/threat_intel/tor_exit_nodes.txt
+data/threat_intel/tor_exit_nodes.meta.json
+data/geoip/
+data/proxy/

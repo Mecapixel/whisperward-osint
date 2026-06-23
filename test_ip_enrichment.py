@@ -116,6 +116,14 @@ def write_asn_file(tmp_path, entries, name="asns.json"):
     return path
 
 
+def valid_entry(asn, category="known-vpn", organization="Test Org", source="test source"):
+    """Builds a schema complete ASN entry. The authority schema requires asn,
+    organization, category, and source on every entry, so test fixtures use this
+    factory to stay valid unless a test is deliberately exercising a missing
+    field."""
+    return {"asn": asn, "organization": organization, "category": category, "source": source}
+
+
 def assess_only(tor_exits=None, asn_set=None, config=None):
     """Returns an enricher with no databases loaded, suitable for unit testing
     the _assess scoring logic with directly injected state."""
@@ -192,8 +200,8 @@ class TestGracefulDegradation:
 class TestASNAuthorityPolicy:
     def test_clean_file_loads_in_strict_mode(self, tmp_path_str):
         path = write_asn_file(tmp_path_str, [
-            {"asn": 14061, "organization": "DigitalOcean", "category": "hosting-datacenter"},
-            {"asn": 9009, "organization": "M247", "category": "known-vpn"},
+            valid_entry(14061, "hosting-datacenter", "DigitalOcean"),
+            valid_entry(9009, "known-vpn", "M247"),
         ])
         enricher = IPEnricher(make_config(tmp_path_str, asn_set_path=path))
         assert len(enricher._asn_set) == 2
@@ -239,16 +247,47 @@ class TestASNAuthorityPolicy:
 
 class TestValidators:
     def test_validate_data_accepts_clean(self):
-        assert validate_asn_set_data({"asns": [{"asn": 1, "category": "known-vpn"}]}) == []
+        assert validate_asn_set_data({"asns": [valid_entry(1, "known-vpn")]}) == []
 
     def test_validate_data_rejects_unknown_category(self):
-        errors = validate_asn_set_data({"asns": [{"asn": 1, "category": "nope"}]})
-        assert len(errors) == 1
-        assert "nope" in errors[0]
+        errors = validate_asn_set_data({"asns": [valid_entry(1, "nope")]})
+        assert any("nope" in e for e in errors)
 
     def test_validate_data_rejects_missing_asn(self):
-        errors = validate_asn_set_data({"asns": [{"category": "known-vpn"}]})
+        errors = validate_asn_set_data({"asns": [
+            {"organization": "X", "category": "known-vpn", "source": "s"}]})
         assert any("missing an asn" in e for e in errors)
+
+    def test_validate_data_rejects_missing_organization(self):
+        errors = validate_asn_set_data({"asns": [
+            {"asn": 1, "category": "known-vpn", "source": "s"}]})
+        assert any("missing an organization" in e for e in errors)
+
+    def test_validate_data_rejects_missing_source(self):
+        errors = validate_asn_set_data({"asns": [
+            {"asn": 1, "category": "known-vpn", "organization": "X"}]})
+        assert any("missing a source" in e for e in errors)
+
+    def test_validate_data_rejects_unknown_field(self):
+        entry = valid_entry(1, "known-vpn")
+        entry["bogus"] = "drift"
+        errors = validate_asn_set_data({"asns": [entry]})
+        assert any("unrecognized fields" in e and "bogus" in e for e in errors)
+
+    def test_validate_data_allows_confidence_field(self):
+        entry = valid_entry(1, "known-vpn")
+        entry["confidence"] = "high"
+        assert validate_asn_set_data({"asns": [entry]}) == []
+
+    def test_validate_data_rejects_duplicate_asn(self):
+        errors = validate_asn_set_data({"asns": [
+            valid_entry(9009, "known-vpn"), valid_entry(9009, "hosting-datacenter")]})
+        assert any("duplicate" in e.lower() for e in errors)
+
+    def test_validate_data_rejects_non_numeric_asn(self):
+        errors = validate_asn_set_data({"asns": [
+            {"asn": "abc", "organization": "X", "category": "known-vpn", "source": "s"}]})
+        assert any("non numeric" in e for e in errors)
 
     def test_validate_data_rejects_non_list(self):
         assert validate_asn_set_data({"asns": "not a list"})
@@ -265,8 +304,7 @@ class TestValidators:
         assert errors and "JSON" in errors[0]
 
     def test_validate_path_accepts_clean_file(self, tmp_path_str):
-        path = write_asn_file(tmp_path_str, [
-            {"asn": 9009, "category": "known-vpn"}])
+        path = write_asn_file(tmp_path_str, [valid_entry(9009, "known-vpn")])
         assert validate_asn_set(path) == []
 
     def test_recognized_categories_constant(self):
