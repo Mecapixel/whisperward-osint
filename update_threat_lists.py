@@ -158,13 +158,21 @@ def atomic_write_lines(path: str, lines: list):
     written to a temporary file in the same directory and then moved into place
     with os.replace, which is atomic on a given filesystem. This guarantees that a
     reader never sees a half written file and that a failure mid write cannot
-    corrupt the existing file."""
+    corrupt the existing file.
+
+    The file is written in binary mode with explicit newline characters so the
+    bytes on disk are identical on every operating system. This matters because
+    the provenance SHA-256 is computed over the same newline form, and a hash that
+    changed depending on which platform wrote the file would be useless for
+    verification. Writing binary avoids the text mode newline translation that
+    Windows would otherwise apply."""
     directory = os.path.dirname(path) or "."
     os.makedirs(directory, exist_ok=True)
+    body = ("\n".join(lines) + "\n").encode("utf-8")
     handle = tempfile.NamedTemporaryFile(
-        mode="w", encoding="utf-8", dir=directory, delete=False, suffix=".tmp")
+        mode="wb", dir=directory, delete=False, suffix=".tmp")
     try:
-        handle.write("\n".join(lines) + "\n")
+        handle.write(body)
         handle.flush()
         os.fsync(handle.fileno())
         handle.close()
