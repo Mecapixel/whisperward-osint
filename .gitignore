@@ -79,3 +79,5 @@ data/threat_intel/tor_exit_nodes.txt
 data/threat_intel/tor_exit_nodes.meta.json
 data/geoip/
 data/proxy/
+
+data/signing/
