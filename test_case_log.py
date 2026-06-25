@@ -166,5 +166,62 @@ class TestEntriesAndTimestamps:
         assert actions == ["first", "second", "third"]
 
 
+class TestConnectionAndOwnership:
+    def test_shared_connection_not_closed_by_log(self, db_path):
+        # When a connection is supplied, the log does not own it and must not
+        # close it. This is the mode the packager uses.
+        shared = sqlite3.connect(db_path)
+        log = ChainOfCustodyLog(connection=shared)
+        log.append(action="a", case_id="C")
+        log.close()
+        # The shared connection should still be usable after the log closes.
+        shared.execute("SELECT 1").fetchone()
+        shared.close()
+
+    def test_owned_connection_path_works(self, db_path):
+        # When only a db_path is supplied the log owns and manages its own
+        # connection. This exercises the ownership branch end to end.
+        log = ChainOfCustodyLog(db_path=db_path)
+        log.append(action="a", case_id="C")
+        assert log.verify()["intact"] is True
+        log.close()
+
+    def test_requires_path_or_connection(self):
+        with pytest.raises(ValueError):
+            ChainOfCustodyLog()
+
+    def test_two_logs_share_one_connection(self, db_path):
+        # The packager opens its own ChainOfCustodyLog on a connection the caller
+        # also uses. Appends from either must extend the same intact chain.
+        shared = sqlite3.connect(db_path)
+        log_a = ChainOfCustodyLog(connection=shared)
+        log_a.append(action="first", case_id="C")
+        log_b = ChainOfCustodyLog(connection=shared)
+        log_b.append(action="second", case_id="C")
+        assert log_b.verify()["intact"] is True
+        assert log_b.verify()["entries_checked"] == 2
+        shared.close()
+
+
+class TestNullFieldTampering:
+    def test_filling_a_null_field_is_detected(self, db_path):
+        # An entry written with no analyst stores NULL. Changing that NULL to a
+        # value after the fact must break the chain, because the digest covered
+        # the null.
+        log = ChainOfCustodyLog(db_path=db_path)
+        log.append(action="a", case_id="C")  # analyst is None
+        conn = sqlite3.connect(db_path)
+        conn.execute("UPDATE evidence_log SET analyst='InsertedName' WHERE log_id=1")
+        conn.commit()
+        conn.close()
+        assert log.verify()["intact"] is False
+
+    def test_analyst_none_flows_through(self, db_path):
+        log = ChainOfCustodyLog(db_path=db_path)
+        entry = log.append(action="a", case_id="C", analyst=None)
+        assert entry["analyst"] is None
+        assert log.verify()["intact"] is True
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-v"]))
