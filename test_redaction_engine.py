@@ -111,6 +111,53 @@ class TestProtectedTags:
         assert r["counts"]["protected"] == 0
         conn.close()
 
+    def test_protected_tag_in_case_description(self, tmp_path):
+        # A tag written in the case description must be gathered and masked, not
+        # only tags in target notes.
+        conn = sqlite3.connect(os.path.join(str(tmp_path), "w.db"))
+        conn.executescript(
+            "CREATE TABLE cases (case_id TEXT PRIMARY KEY, case_name TEXT, "
+            "description TEXT, created_at TEXT, analyst_name TEXT, status TEXT);"
+            "CREATE TABLE targets (target_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "case_id TEXT, platform TEXT, username TEXT, notes TEXT);"
+            "CREATE TABLE artifacts (artifact_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "target_id INTEGER, module_name TEXT, artifact_type TEXT, file_path TEXT, "
+            "sha256 TEXT, collected_at TEXT);"
+            "CREATE TABLE analysis_results (result_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "target_id INTEGER, analysis_type TEXT, risk_score REAL, analyst_notes TEXT, "
+            "analyzed_at TEXT);")
+        conn.execute("INSERT INTO cases VALUES ('CASE-D','n',"
+                     "'protected: secret_handle\\nConcern about secret_handle','t','Meca','open')")
+        conn.execute("INSERT INTO targets (case_id, platform, username) VALUES ('CASE-D','roblox','suspect')")
+        conn.commit()
+        r = redact_case("CASE-D", connection=conn, output_dir=str(tmp_path))
+        # The handle should be gathered from the description tag and masked there.
+        assert "secret_handle" not in json.dumps(r["data"])
+        conn.close()
+
+    def test_protected_tag_in_analyst_notes(self, tmp_path):
+        conn = sqlite3.connect(os.path.join(str(tmp_path), "w.db"))
+        conn.executescript(
+            "CREATE TABLE cases (case_id TEXT PRIMARY KEY, case_name TEXT, "
+            "description TEXT, created_at TEXT, analyst_name TEXT, status TEXT);"
+            "CREATE TABLE targets (target_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "case_id TEXT, platform TEXT, username TEXT, notes TEXT);"
+            "CREATE TABLE artifacts (artifact_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "target_id INTEGER, module_name TEXT, artifact_type TEXT, file_path TEXT, "
+            "sha256 TEXT, collected_at TEXT);"
+            "CREATE TABLE analysis_results (result_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "target_id INTEGER, analysis_type TEXT, risk_score REAL, analyst_notes TEXT, "
+            "analyzed_at TEXT);")
+        conn.execute("INSERT INTO cases VALUES ('CASE-A2','n','d','t','Meca','open')")
+        conn.execute("INSERT INTO targets (case_id, platform, username) VALUES ('CASE-A2','roblox','suspect')")
+        conn.execute("INSERT INTO analysis_results (target_id, analysis_type, risk_score, "
+                     "analyst_notes, analyzed_at) VALUES (1,'behavioral',5.0,"
+                     "'protected: witness_kid\\nwitness_kid saw the messages','t')")
+        conn.commit()
+        r = redact_case("CASE-A2", connection=conn, output_dir=str(tmp_path))
+        assert "witness_kid" not in json.dumps(r["data"])
+        conn.close()
+
 
 class TestEvidencePreserved:
     def test_suspect_username_preserved(self, env):
@@ -170,6 +217,26 @@ class TestChainAndOutput:
 
     def test_no_db_declines(self):
         assert redact_case("CASE-R1") is None
+
+    def test_write_disabled_keeps_metadata(self, env):
+        # With write_file False, no file is produced but the redaction metadata
+        # and counts are still correct in the returned data.
+        r = redact_case("CASE-R1", connection=env["conn"], output_dir=env["dir"],
+                        write_file=False, analyst="Meca", reason="referral")
+        assert r["output_path"] is None
+        assert r["data"]["redaction"]["reason"] == "referral"
+        assert r["data"]["redaction"]["total_redactions"] == r["total_redactions"]
+
+    def test_minor_policy_counts_match_standard(self, env):
+        # The minor policy changes the placeholder, not what is counted. The
+        # number of redactions should match the standard policy on the same data.
+        standard = redact_case("CASE-R1", connection=env["conn"], output_dir=env["dir"],
+                               policy="standard", write_file=False)
+        # Re-seed identical state for a clean comparison is unnecessary here since
+        # redaction does not mutate the database, only reads it.
+        minor = redact_case("CASE-R1", connection=env["conn"], output_dir=env["dir"],
+                            policy="minor_involved", write_file=False)
+        assert standard["total_redactions"] == minor["total_redactions"]
 
 
 class TestRegexUnit:

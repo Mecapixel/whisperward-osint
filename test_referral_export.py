@@ -159,6 +159,24 @@ class TestPackageReference:
         prov = r["data"]["provenance"]["sealed_evidence_package"]
         assert isinstance(prov, str)
 
+    def test_zip_without_seal_handled(self, env):
+        # A package ZIP that lacks a seal file must degrade to no reference rather
+        # than crash or claim a hash it does not have.
+        pkg = os.path.join(env["exports"], "CASE-X1_evidence_package.zip")
+        with zipfile.ZipFile(pkg, "w") as archive:
+            archive.writestr("CASE-X1_manifest.json", "{}")  # manifest but no seal
+        r = export_referral("CASE-X1", connection=env["conn"], output_dir=env["exports"])
+        prov = r["data"]["provenance"]["sealed_evidence_package"]
+        assert isinstance(prov, str)
+
+    def test_malformed_seal_handled(self, env):
+        pkg = os.path.join(env["exports"], "CASE-X1_evidence_package.zip")
+        with zipfile.ZipFile(pkg, "w") as archive:
+            archive.writestr("CASE-X1_manifest.seal.json", "not valid json {{{")
+        r = export_referral("CASE-X1", connection=env["conn"], output_dir=env["exports"])
+        prov = r["data"]["provenance"]["sealed_evidence_package"]
+        assert isinstance(prov, str)
+
 
 class TestChainAndGuards:
     def test_referral_logged_to_chain(self, env):

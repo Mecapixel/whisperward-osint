@@ -186,27 +186,58 @@ def _redact_value(value, policy: dict, protected_values: list, result: Redaction
 
 def _gather_protected_values(connection: sqlite3.Connection, case_id: str) -> list:
     """Collects analyst tagged protected values for a case. A value is treated as
-    protected when a target's notes field contains a protected tag, or when a
-    dedicated protected_parties table is present. The notes convention is a line
-    of the form protected: value, one per line, which keeps tagging possible even
-    without a schema change."""
+    protected when a protected tag of the form protected: value appears in any of
+    the case's free text fields, namely target notes, the case description, and
+    analysis analyst_notes, or when a dedicated protected_parties table is present.
+    Scanning every free text surface, rather than target notes alone, means a tag
+    works wherever the analyst happens to write it, which matches where the
+    redaction is actually applied across the case structure."""
     connection.row_factory = sqlite3.Row
     cur = connection.cursor()
     values = []
 
-    # Convention based tags inside target notes.
+    def _extract_tags(text):
+        found = []
+        if text is None:
+            return found
+        for line in str(text).splitlines():
+            stripped = line.strip()
+            if stripped.lower().startswith("protected:"):
+                val = stripped.split(":", 1)[1].strip()
+                if val:
+                    found.append(val)
+        return found
+
+    # Target notes.
     try:
         rows = cur.execute(
             "SELECT notes FROM targets WHERE case_id = ? AND notes IS NOT NULL",
             (case_id,)
         ).fetchall()
         for row in rows:
-            for line in str(row["notes"]).splitlines():
-                stripped = line.strip()
-                if stripped.lower().startswith("protected:"):
-                    val = stripped.split(":", 1)[1].strip()
-                    if val:
-                        values.append(val)
+            values.extend(_extract_tags(row["notes"]))
+    except sqlite3.Error:
+        pass
+
+    # Case description.
+    try:
+        row = cur.execute(
+            "SELECT description FROM cases WHERE case_id = ?", (case_id,)
+        ).fetchone()
+        if row is not None:
+            values.extend(_extract_tags(row["description"]))
+    except sqlite3.Error:
+        pass
+
+    # Analyst notes on analysis results for this case's targets.
+    try:
+        rows = cur.execute(
+            "SELECT ar.analyst_notes FROM analysis_results ar "
+            "JOIN targets t ON ar.target_id = t.target_id "
+            "WHERE t.case_id = ? AND ar.analyst_notes IS NOT NULL", (case_id,)
+        ).fetchall()
+        for row in rows:
+            values.extend(_extract_tags(row["analyst_notes"]))
     except sqlite3.Error:
         pass
 

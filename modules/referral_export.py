@@ -239,9 +239,9 @@ def export_referral(case_id: str, analyst: Optional[str] = None,
                 if own_connection and conn is not None:
                     conn.close()
                 print("Redaction was requested but the redaction engine is not "
-                      "available. Refusing to write an unredacted referral by "
-                      "accident. Pass redact set to false to export the internal "
-                      "view deliberately.")
+                      "available, so a redacted referral cannot be produced. To "
+                      "export the unredacted internal view deliberately, pass "
+                      "redact set to false.")
                 return None
             # Redact the assembled referral structure using the engine's value
             # walker, so the same masking that governs case redaction governs the
@@ -314,9 +314,15 @@ def _redact_referral(connection: sqlite3.Connection, case_id: str,
     """Masks the assembled referral structure using the redaction engine's value
     walker and the same protected tags gathered for the case. Returns the redacted
     referral and a counts summary. This reuses the engine's logic rather than
-    duplicating regex, so the referral and the case redaction stay consistent."""
-    from modules.redaction_engine import (_redact_value, RedactionResult, POLICIES,
-                                          _gather_protected_values)
+    duplicating regex, so the referral and the case redaction stay consistent. The
+    import uses the same relative then flat pattern as the rest of the module so it
+    works however the package is run."""
+    try:
+        from .redaction_engine import (_redact_value, RedactionResult, POLICIES,
+                                        _gather_protected_values)
+    except Exception:
+        from redaction_engine import (_redact_value, RedactionResult, POLICIES,
+                                       _gather_protected_values)
     if policy not in POLICIES:
         policy = "standard"
     policy_def = POLICIES[policy]

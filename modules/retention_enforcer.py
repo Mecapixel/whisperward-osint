@@ -189,21 +189,26 @@ def _purge_case(connection: sqlite3.Connection, case_id: str, export_dir: str,
                 "reason": "Database deletion failed and was rolled back: " + str(exc)}
 
     removed_files = []
+    failed_files = []
     for path in export_files:
         try:
             path.unlink()
             removed_files.append(path.name)
         except Exception:
             # A file that cannot be removed is reported but does not fail the
-            # purge, since the database rows are already gone.
-            pass
+            # purge, since the database rows are already gone. It is surfaced so a
+            # leftover is visible rather than silent.
+            failed_files.append(path.name)
 
-    return {
+    result = {
         "case_id": case_id,
         "purged": True,
         "rows_deleted": row_counts,
         "files_deleted": removed_files,
     }
+    if failed_files:
+        result["files_not_removed"] = failed_files
+    return result
 
 
 def enforce_retention(retention_days: int = DEFAULT_RETENTION_DAYS,

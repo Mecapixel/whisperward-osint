@@ -144,6 +144,42 @@ class TestChainPreserved:
         log = ChainOfCustodyLog(connection=env["conn"])
         assert log.verify()["intact"] is True
 
+    def test_purge_aborts_if_chain_entry_fails(self, env, monkeypatch):
+        # If the audit entry cannot be written, the purge must not delete the data,
+        # because deletion without an audit record would be unprovable enforcement.
+        import modules.retention_enforcer as re_mod
+
+        class BrokenLog:
+            def __init__(self, *a, **k):
+                pass
+            def append(self, *a, **k):
+                raise RuntimeError("simulated chain failure")
+
+        monkeypatch.setattr(re_mod, "ChainOfCustodyLog", BrokenLog)
+        rep = enforce_retention(connection=env["conn"], export_dir=env["exports"],
+                                confirm=True, analyst="Meca")
+        # The old case must still be present because the purge aborted.
+        assert env["conn"].execute(
+            "SELECT COUNT(*) FROM cases WHERE case_id='CASE-OLD'").fetchone()[0] == 1
+        assert rep["cases"][0]["purged"] is False
+
+    def test_multi_target_case_fully_purged(self, tmp_path):
+        # A case with several targets and their artifacts must delete cleanly in
+        # foreign key safe order.
+        directory = str(tmp_path)
+        conn, exports = seed(directory)
+        # Add two more targets with artifacts to CASE-OLD.
+        for uname in ["s3", "s4"]:
+            conn.execute("INSERT INTO targets (case_id, platform, username) VALUES ('CASE-OLD','roblox',?)", (uname,))
+            tid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+            conn.execute("INSERT INTO artifacts (target_id, module_name, artifact_type, sha256) "
+                         "VALUES (?,'roblox','profile','h')", (tid,))
+        conn.commit()
+        enforce_retention(connection=conn, export_dir=exports, confirm=True, analyst="Meca")
+        assert conn.execute("SELECT COUNT(*) FROM targets WHERE case_id='CASE-OLD'").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM artifacts").fetchone()[0] == 0
+        conn.close()
+
 
 class TestTimestampParsing:
     def test_iso_with_offset(self):
