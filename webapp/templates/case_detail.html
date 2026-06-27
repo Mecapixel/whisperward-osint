@@ -29,9 +29,9 @@
       .subject-meta-block .meta-row .lbl { color: var(--silver-dim); }
       .subject-meta-block .meta-row .val { color: var(--silver-bright); }
       .dossier-right { display: flex; flex-direction: column; gap: 4px; }
-      .data-field { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px dashed var(--silver-dim); font-family: var(--font-mono); }
-      .field-label { font-family: var(--font-mono); font-size: 14px; color: var(--silver-dim); letter-spacing: 2px; text-transform: uppercase; }
-      .field-value { font-family: var(--font-mono); font-size: 16px; color: var(--silver-bright); letter-spacing: 1px; }
+      .data-field { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 7px 0; border-bottom: 1px dashed var(--silver-dim); font-family: var(--font-mono); }
+      .field-label { font-family: var(--font-mono); font-size: 14px; color: var(--silver-dim); letter-spacing: 2px; text-transform: uppercase; flex-shrink: 0; }
+      .field-value { font-family: var(--font-mono); font-size: 16px; color: var(--silver-bright); letter-spacing: 1px; text-align: right; word-break: break-word; overflow-wrap: anywhere; }
       .field-value.redacted { color: var(--red-glow); text-shadow: 0 0 6px rgba(255, 48, 48, 0.4); }
       .threat-section { margin-top: 14px; padding: 14px; border: 1px solid var(--silver-dim); background: rgba(10, 10, 10, 0.6); }
       .threat-section .field-label { display: block; margin-bottom: 10px; }
@@ -54,13 +54,13 @@
       .risk-viz-section { margin-top: 22px; grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 240px; gap: 24px; }
       .risk-panel { border: 1px solid var(--silver-dim); background: linear-gradient(180deg, rgba(20,20,20,0.6) 0%, rgba(10,10,10,0.6) 100%); padding: 16px 20px; position: relative; }
       .risk-panel::before { content: ""; position: absolute; top: -1px; left: -1px; right: -1px; height: 3px; background: var(--silver-dim); }
-      .risk-panel-title { font-family: var(--font-display); font-size: 11px; color: var(--silver-bright); letter-spacing: 3px; margin-bottom: 16px; }
+      .risk-panel-title { font-family: var(--font-mono); font-size: 20px; color: var(--silver-bright); letter-spacing: 4px; margin-bottom: 16px; white-space: nowrap; text-transform: uppercase; }
       .timeline-svg { width: 100%; height: 180px; display: block; }
       .timeline-empty { font-family: var(--font-mono); font-size: 15px; color: var(--silver-dim); letter-spacing: 1px; padding: 40px 0; text-align: center; }
       .gauge-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; }
       .gauge-svg { width: 180px; height: 180px; }
-      .gauge-readout { font-family: var(--font-display); font-size: 20px; letter-spacing: 2px; margin-top: 8px; }
-      .gauge-tier { font-family: var(--font-mono); font-size: 13px; letter-spacing: 2px; margin-top: 6px; color: var(--silver-dim); }
+      .gauge-readout { font-family: var(--font-mono); font-size: 32px; letter-spacing: 2px; margin-top: 8px; }
+      .gauge-tier { font-family: var(--font-mono); font-size: 16px; letter-spacing: 2px; margin-top: 6px; color: var(--silver-dim); white-space: nowrap; }
       body { overflow-y: auto !important; }
     </style>
 </head>
