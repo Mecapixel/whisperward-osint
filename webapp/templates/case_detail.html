@@ -6,256 +6,61 @@
     <title>WHISPERWARD 26 // DOSSIER — {{ case.case_id if case else 'UNKNOWN' }}</title>
     <link rel="stylesheet" href="/static/css/whisperward.css">
     <style>
-      .dossier-screen {
-        max-width: 1200px;
-        margin: 0 auto;
-        min-height: 100vh;
-        padding: 20px 60px 40px;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-      }
-      .dossier-topbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--silver-dim);
-        padding-bottom: 10px;
-        margin-bottom: 18px;
-        font-family: var(--font-mono);
-        font-size: 15px;
-        color: var(--silver);
-      }
-      .dossier-topbar a {
-        color: var(--red-glow);
-        text-decoration: none;
-        letter-spacing: 1px;
-      }
+      .dossier-screen { max-width: 1200px; margin: 0 auto; min-height: 100vh; padding: 20px 60px 40px; position: relative; display: flex; flex-direction: column; }
+      .dossier-topbar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--silver-dim); padding-bottom: 10px; margin-bottom: 18px; font-family: var(--font-mono); font-size: 15px; color: var(--silver); }
+      .dossier-topbar a { color: var(--red-glow); text-decoration: none; letter-spacing: 1px; }
       .dossier-topbar a:hover { color: var(--silver-bright); }
       .dossier-topbar .links span { margin-right: 18px; color: var(--silver-dim); }
       .dossier-topbar .links span:hover { color: var(--silver); cursor: pointer; }
-      .dossier-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 22px;
-      }
-      .dossier-title {
-        font-family: var(--font-display);
-        font-size: 18px;
-        color: var(--silver-bright);
-        letter-spacing: 4px;
-      }
-      .dossier-title .subject-id {
-        color: var(--red-blood);
-        text-shadow: 0 0 10px var(--red-glow);
-      }
-      .dossier-stamp {
-        font-family: var(--font-display);
-        font-size: 11px;
-        color: var(--red-blood);
-        border: 2px solid var(--red-blood);
-        padding: 6px 14px;
-        letter-spacing: 3px;
-        transform: rotate(-3deg);
-        text-shadow: 0 0 8px var(--red-glow);
-        box-shadow: 0 0 15px rgba(255, 26, 26, 0.2);
-      }
-      .dossier-body {
-        display: grid;
-        grid-template-columns: 200px 1fr;
-        gap: 40px;
-        flex: 1;
-      }
-      .avatar-box {
-        border: 1px solid var(--silver-dim);
-        background: linear-gradient(180deg, #141414 0%, #050505 100%);
-        padding: 14px;
-        position: relative;
-      }
-      .avatar-box::before {
-        content: "";
-        position: absolute;
-        top: -1px; left: -1px; right: -1px; bottom: -1px;
-        border: 1px solid rgba(255, 26, 26, 0.15);
-        pointer-events: none;
-      }
-      .avatar-image {
-        width: 100%;
-        aspect-ratio: 1;
-        object-fit: cover;
-        border: 1px solid var(--silver-dim);
-        filter: contrast(1.05) saturate(0.85);
-        display: block;
-      }
-      .avatar-placeholder {
-        width: 100%;
-        aspect-ratio: 1;
-        background: repeating-linear-gradient(
-            45deg,
-            #1a1a1a 0px, #1a1a1a 8px,
-            #0a0a0a 8px, #0a0a0a 16px
-          );
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--font-display);
-        font-size: 11px;
-        color: var(--red-glow);
-        letter-spacing: 3px;
-        border: 1px solid var(--silver-dim);
-        text-shadow: 0 0 8px var(--red-glow);
-      }
-      .avatar-label {
-        margin-top: 10px;
-        font-family: var(--font-mono);
-        font-size: 12px;
-        color: var(--silver-dim);
-        text-align: center;
-        letter-spacing: 2px;
-      }
-      .avatar-label.verified {
-        color: var(--red-glow);
-        text-shadow: 0 0 6px rgba(255, 48, 48, 0.3);
-      }
-      .subject-meta-block {
-        margin-top: 14px;
-        border: 1px solid var(--silver-dim);
-        padding: 12px;
-        font-family: var(--font-mono);
-        font-size: 14px;
-        background: rgba(10, 10, 10, 0.6);
-      }
-      .subject-meta-block .meta-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 3px 0;
-        color: var(--silver);
-        border-bottom: 1px dashed var(--silver-dim);
-      }
+      .dossier-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+      .dossier-title { font-family: var(--font-display); font-size: 18px; color: var(--silver-bright); letter-spacing: 4px; }
+      .dossier-title .subject-id { color: var(--red-blood); text-shadow: 0 0 10px var(--red-glow); }
+      .dossier-stamp { font-family: var(--font-display); font-size: 11px; color: var(--red-blood); border: 2px solid var(--red-blood); padding: 6px 14px; letter-spacing: 3px; transform: rotate(-3deg); text-shadow: 0 0 8px var(--red-glow); box-shadow: 0 0 15px rgba(255, 26, 26, 0.2); }
+      .dossier-body { display: grid; grid-template-columns: 200px 1fr; gap: 40px; flex: 1; }
+      .avatar-box { border: 1px solid var(--silver-dim); background: linear-gradient(180deg, #141414 0%, #050505 100%); padding: 14px; position: relative; }
+      .avatar-box::before { content: ""; position: absolute; top: -1px; left: -1px; right: -1px; bottom: -1px; border: 1px solid rgba(255, 26, 26, 0.15); pointer-events: none; }
+      .avatar-image { width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid var(--silver-dim); filter: contrast(1.05) saturate(0.85); display: block; }
+      .avatar-placeholder { width: 100%; aspect-ratio: 1; background: repeating-linear-gradient(45deg, #1a1a1a 0px, #1a1a1a 8px, #0a0a0a 8px, #0a0a0a 16px); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 11px; color: var(--red-glow); letter-spacing: 3px; border: 1px solid var(--silver-dim); text-shadow: 0 0 8px var(--red-glow); }
+      .avatar-label { margin-top: 10px; font-family: var(--font-mono); font-size: 12px; color: var(--silver-dim); text-align: center; letter-spacing: 2px; }
+      .avatar-label.verified { color: var(--red-glow); text-shadow: 0 0 6px rgba(255, 48, 48, 0.3); }
+      .subject-meta-block { margin-top: 14px; border: 1px solid var(--silver-dim); padding: 12px; font-family: var(--font-mono); font-size: 14px; background: rgba(10, 10, 10, 0.6); }
+      .subject-meta-block .meta-row { display: flex; justify-content: space-between; padding: 3px 0; color: var(--silver); border-bottom: 1px dashed var(--silver-dim); }
       .subject-meta-block .meta-row:last-child { border-bottom: none; }
       .subject-meta-block .meta-row .lbl { color: var(--silver-dim); }
       .subject-meta-block .meta-row .val { color: var(--silver-bright); }
-      .dossier-right {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .data-field {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 7px 0;
-        border-bottom: 1px dashed var(--silver-dim);
-        font-family: var(--font-mono);
-      }
-      .field-label {
-        font-family: var(--font-mono);
-        font-size: 14px;
-        color: var(--silver-dim);
-        letter-spacing: 2px;
-        text-transform: uppercase;
-      }
-      .field-value {
-        font-family: var(--font-mono);
-        font-size: 16px;
-        color: var(--silver-bright);
-        letter-spacing: 1px;
-      }
-      .field-value.redacted {
-        color: var(--red-glow);
-        text-shadow: 0 0 6px rgba(255, 48, 48, 0.4);
-      }
-      .threat-section {
-        margin-top: 14px;
-        padding: 14px;
-        border: 1px solid var(--silver-dim);
-        background: rgba(10, 10, 10, 0.6);
-      }
+      .dossier-right { display: flex; flex-direction: column; gap: 4px; }
+      .data-field { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px dashed var(--silver-dim); font-family: var(--font-mono); }
+      .field-label { font-family: var(--font-mono); font-size: 14px; color: var(--silver-dim); letter-spacing: 2px; text-transform: uppercase; }
+      .field-value { font-family: var(--font-mono); font-size: 16px; color: var(--silver-bright); letter-spacing: 1px; }
+      .field-value.redacted { color: var(--red-glow); text-shadow: 0 0 6px rgba(255, 48, 48, 0.4); }
+      .threat-section { margin-top: 14px; padding: 14px; border: 1px solid var(--silver-dim); background: rgba(10, 10, 10, 0.6); }
       .threat-section .field-label { display: block; margin-bottom: 10px; }
-      .threat-bar-container {
-        width: 100%;
-        height: 16px;
-        border: 1px solid var(--silver);
-        background: var(--bg-panel);
-        padding: 2px;
-        margin-bottom: 8px;
-      }
-      .threat-bar {
-        height: 100%;
-        width: 50%;
-        background: linear-gradient(90deg,
-          var(--silver-dim) 0%,
-          #d4a017 40%,
-          var(--red-blood) 80%);
-        position: relative;
-      }
-      .threat-bar::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: repeating-linear-gradient(
-          90deg,
-          rgba(0,0,0,0.3) 0px, rgba(0,0,0,0.3) 2px,
-          transparent 2px, transparent 6px
-        );
-      }
-      .threat-score {
-        font-family: var(--font-display);
-        font-size: 13px;
-        color: var(--red-glow);
-        letter-spacing: 3px;
-        text-shadow: 0 0 8px rgba(255, 48, 48, 0.4);
-      }
+      .threat-bar-container { width: 100%; height: 16px; border: 1px solid var(--silver); background: var(--bg-panel); padding: 2px; margin-bottom: 8px; }
+      .threat-bar { height: 100%; width: 50%; background: linear-gradient(90deg, var(--silver-dim) 0%, #d4a017 40%, var(--red-blood) 80%); position: relative; }
+      .threat-bar::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(0,0,0,0.3) 0px, rgba(0,0,0,0.3) 2px, transparent 2px, transparent 6px); }
+      .threat-score { font-family: var(--font-display); font-size: 13px; color: var(--red-glow); letter-spacing: 3px; text-shadow: 0 0 8px rgba(255, 48, 48, 0.4); }
       .platforms-section { margin-top: 14px; }
-      .platform-icons {
-        margin-top: 10px;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      .platform-tag {
-        font-family: var(--font-mono);
-        font-size: 13px;
-        color: var(--silver);
-        border: 1px solid var(--silver-dim);
-        padding: 5px 12px;
-        letter-spacing: 2px;
-        background: rgba(10, 10, 10, 0.4);
-      }
-      .platform-tag.active {
-        color: var(--red-glow);
-        border-color: var(--red-blood);
-        text-shadow: 0 0 6px rgba(255, 48, 48, 0.3);
-      }
-      .intel-log-section {
-        margin-top: 22px;
-        grid-column: 1 / -1;
-      }
-      .intel-log {
-        margin-top: 10px;
-        background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
-        border: 1px solid var(--silver-dim);
-        padding: 14px 18px;
-        font-family: var(--font-mono);
-        font-size: 14px;
-        color: var(--silver);
-        min-height: 130px;
-        position: relative;
-      }
-      .intel-log::before {
-        content: "";
-        position: absolute;
-        top: -1px; left: -1px; right: -1px;
-        height: 3px;
-        background: var(--red-blood);
-      }
+      .platform-icons { margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
+      .platform-tag { font-family: var(--font-mono); font-size: 13px; color: var(--silver); border: 1px solid var(--silver-dim); padding: 5px 12px; letter-spacing: 2px; background: rgba(10, 10, 10, 0.4); }
+      .platform-tag.active { color: var(--red-glow); border-color: var(--red-blood); text-shadow: 0 0 6px rgba(255, 48, 48, 0.3); }
+      .intel-log-section { margin-top: 22px; grid-column: 1 / -1; }
+      .intel-log { margin-top: 10px; background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%); border: 1px solid var(--silver-dim); padding: 14px 18px; font-family: var(--font-mono); font-size: 14px; color: var(--silver); min-height: 130px; position: relative; }
+      .intel-log::before { content: ""; position: absolute; top: -1px; left: -1px; right: -1px; height: 3px; background: var(--red-blood); }
       .log-entry { padding: 2px 0; letter-spacing: 1px; }
       .log-entry::before { content: "> "; color: var(--red-glow); }
-      .blinking-text {
-        color: var(--red-glow);
-        animation: blink 1s steps(2) infinite;
-      }
+      .blinking-text { color: var(--red-glow); animation: blink 1s steps(2) infinite; }
+
+      /* ===== Risk visualization row (timeline + gauge) ===== */
+      .risk-viz-section { margin-top: 22px; grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 240px; gap: 24px; }
+      .risk-panel { border: 1px solid var(--silver-dim); background: linear-gradient(180deg, rgba(20,20,20,0.6) 0%, rgba(10,10,10,0.6) 100%); padding: 16px 20px; position: relative; }
+      .risk-panel::before { content: ""; position: absolute; top: -1px; left: -1px; right: -1px; height: 3px; background: var(--silver-dim); }
+      .risk-panel-title { font-family: var(--font-display); font-size: 11px; color: var(--silver-bright); letter-spacing: 3px; margin-bottom: 16px; }
+      .timeline-svg { width: 100%; height: 180px; display: block; }
+      .timeline-empty { font-family: var(--font-mono); font-size: 15px; color: var(--silver-dim); letter-spacing: 1px; padding: 40px 0; text-align: center; }
+      .gauge-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      .gauge-svg { width: 180px; height: 180px; }
+      .gauge-readout { font-family: var(--font-display); font-size: 20px; letter-spacing: 2px; margin-top: 8px; }
+      .gauge-tier { font-family: var(--font-mono); font-size: 13px; letter-spacing: 2px; margin-top: 6px; color: var(--silver-dim); }
       body { overflow-y: auto !important; }
     </style>
 </head>
@@ -376,6 +181,22 @@
 
     </div>
 
+    <!-- ===== Risk visualization: timeline + gauge ===== -->
+    <div class="risk-viz-section">
+      <div class="risk-panel">
+        <div class="risk-panel-title">// RISK TIMELINE</div>
+        <div id="timelineHost">
+          <div class="timeline-empty">&gt; loading scan history...</div>
+        </div>
+      </div>
+      <div class="risk-panel gauge-wrap">
+        <div class="risk-panel-title">// CURRENT RISK</div>
+        <svg class="gauge-svg" id="riskGauge" viewBox="0 0 100 100"></svg>
+        <div class="gauge-readout" id="gaugeReadout">—</div>
+        <div class="gauge-tier" id="gaugeTier"></div>
+      </div>
+    </div>
+
     <div class="intel-log-section">
       <div class="field-label">TERMINAL INTEL LOG</div>
       <div class="intel-log">
@@ -392,6 +213,106 @@
 
   </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+  const CASE_ID = "{{ case.case_id if case else '' }}";
+  const LATEST_RISK = {{ latest_risk if latest_risk is not none else 'null' }};
+
+  const RED = (getComputedStyle(document.documentElement).getPropertyValue('--red-glow').trim() || '#ff3030');
+  const AMBER = '#d4a017';
+  const GREY = (getComputedStyle(document.documentElement).getPropertyValue('--silver-dim').trim() || '#6a6a6a');
+  const SILVER = (getComputedStyle(document.documentElement).getPropertyValue('--silver').trim() || '#c4c4c4');
+
+  function tierFor(score) {
+    if (score === null || score === undefined) return {label: 'NOT SCORED', color: GREY};
+    if (score < 2.0) return {label: 'TIER 1 — MONITOR', color: GREY};
+    if (score < 7.0) return {label: 'TIER 2 — REVIEW', color: AMBER};
+    return {label: 'TIER 3 — ESCALATE', color: RED};
+  }
+
+  /* ----- Current risk gauge (radial arc) ----- */
+  function drawGauge(score) {
+    const svg = d3.select('#riskGauge');
+    svg.selectAll('*').remove();
+    const cx = 50, cy = 50, r = 38;
+    const tier = tierFor(score);
+    // background ring
+    svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', r)
+      .attr('fill', 'none').attr('stroke', 'rgba(196,196,196,0.12)').attr('stroke-width', 8);
+    if (score !== null && score !== undefined) {
+      const frac = Math.max(0, Math.min(1, score / 10));
+      const circumference = 2 * Math.PI * r;
+      const arc = svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', r)
+        .attr('fill', 'none').attr('stroke', tier.color).attr('stroke-width', 8)
+        .attr('stroke-linecap', 'round')
+        .attr('transform', `rotate(-90 ${cx} ${cy})`)
+        .style('filter', `drop-shadow(0 0 4px ${tier.color})`)
+        .attr('stroke-dasharray', circumference)
+        .attr('stroke-dashoffset', circumference);
+      arc.transition().duration(900)
+        .attr('stroke-dashoffset', circumference * (1 - frac));
+    }
+    d3.select('#gaugeReadout')
+      .style('color', tier.color)
+      .text(score !== null && score !== undefined ? score.toFixed(1) + ' / 10' : 'PENDING');
+    d3.select('#gaugeTier').text(tier.label);
+  }
+
+  /* ----- Risk timeline (line + markers) ----- */
+  function drawTimeline(points) {
+    const host = d3.select('#timelineHost');
+    host.html('');
+    if (!points || points.length === 0) {
+      host.append('div').attr('class', 'timeline-empty').html('&gt; no scan history recorded');
+      return;
+    }
+    const W = host.node().clientWidth || 600, H = 180, m = {t: 16, r: 16, b: 28, l: 30};
+    const svg = host.append('svg').attr('class', 'timeline-svg').attr('viewBox', `0 0 ${W} ${H}`);
+    const innerW = W - m.l - m.r, innerH = H - m.t - m.b;
+
+    const x = d3.scalePoint().domain(points.map((d, i) => i)).range([0, innerW]).padding(0.5);
+    const y = d3.scaleLinear().domain([0, 10]).range([innerH, 0]);
+    const g = svg.append('g').attr('transform', `translate(${m.l},${m.t})`);
+
+    // y gridlines at 0,5,10
+    [0,5,10].forEach(v => {
+      g.append('line').attr('x1',0).attr('x2',innerW).attr('y1',y(v)).attr('y2',y(v))
+        .attr('stroke','rgba(196,196,196,0.10)').attr('stroke-width',1);
+      g.append('text').attr('x',-6).attr('y',y(v)+3).attr('text-anchor','end')
+        .attr('fill',GREY).style('font-family','var(--font-mono)').style('font-size','10px').text(v);
+    });
+
+    if (points.length > 1) {
+      const line = d3.line().x((d,i)=>x(i)).y(d=>y(d.score));
+      g.append('path').datum(points).attr('fill','none').attr('stroke',SILVER)
+        .attr('stroke-width',1.5).attr('d',line).style('filter',`drop-shadow(0 0 3px ${SILVER})`);
+    }
+    g.selectAll('.pt').data(points).enter().append('circle')
+      .attr('cx',(d,i)=>x(i)).attr('cy',d=>y(d.score)).attr('r',5)
+      .attr('fill',d=>tierFor(d.score).color)
+      .style('filter',d=>`drop-shadow(0 0 5px ${tierFor(d.score).color})`);
+    // single-point label
+    if (points.length === 1) {
+      g.append('text').attr('x',x(0)).attr('y',y(points[0].score)-12).attr('text-anchor','middle')
+        .attr('fill',SILVER).style('font-family','var(--font-mono)').style('font-size','12px')
+        .text('SINGLE SCAN');
+    }
+  }
+
+  // gauge from the value already in the page
+  drawGauge(LATEST_RISK);
+
+  // timeline from the API
+  if (CASE_ID) {
+    fetch('/api/case/' + CASE_ID + '/risk-timeline')
+      .then(r => r.json())
+      .then(data => drawTimeline(data.points || []))
+      .catch(err => { drawTimeline([]); console.warn('timeline load failed', err); });
+  } else {
+    drawTimeline([]);
+  }
+</script>
 
 </body>
 </html>
