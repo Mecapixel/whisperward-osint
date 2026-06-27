@@ -11,6 +11,7 @@ import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database import DatabaseManager
+from webapp.api_routes import router as api_router
 
 app = FastAPI(title="WhisperWard OSINT")
 templates = Jinja2Templates(directory="webapp/templates")
@@ -18,6 +19,8 @@ app.mount("/static", StaticFiles(directory="webapp/static"), name="static")
 
 db = DatabaseManager()
 db.init()
+
+app.include_router(api_router)
 
 
 DEMO_CASES = [
