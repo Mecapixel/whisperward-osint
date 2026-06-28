@@ -21,6 +21,13 @@ from modules import (
     ensure_directories,
 )
 
+# M5 evidence-lifecycle features. Imported directly from their submodules because
+# they are not re-exported from modules/__init__.py.
+from modules.report_generator import generate_signed_report
+from modules.redaction_engine import redact_case
+from modules.referral_export import export_referral
+from modules.retention_enforcer import enforce_retention
+
 app = typer.Typer(help="WhisperWard OSINT - Defensive Online Safety Toolkit")
 console = Console()
 db = DatabaseManager()
@@ -123,6 +130,96 @@ def graph(case_id: str = typer.Option(..., "--case", help="Case ID")):
 def export(case_id: str = typer.Option(..., "--case", help="Case ID")):
     console.print(f"[cyan]📦 Creating evidence package...[/cyan]")
     create_evidence_package(case_id)
+
+
+@app.command()
+def report(
+    case_id: str = typer.Option(..., "--case", help="Case ID"),
+    analyst: str = typer.Option("Meca Dismukes", "--analyst", help="Analyst name on the report"),
+    package: bool = typer.Option(False, "--package", help="Also build the evidence package alongside the report")
+):
+    """Generate a cryptographically signed PDF case report."""
+    console.print(f"[cyan]📝 Generating signed case report for {case_id}...[/cyan]")
+    result = generate_signed_report(
+        case_id,
+        connection=db.get_connection(),
+        analyst=analyst,
+        create_package=package,
+    )
+    if result:
+        console.print(f"[bold green]✅ Signed report generated: {result}[/bold green]")
+    else:
+        console.print("[red]Report generation did not complete. Check that the case exists.[/red]")
+
+
+@app.command()
+def redact(
+    case_id: str = typer.Option(..., "--case", help="Case ID"),
+    analyst: str = typer.Option("Meca Dismukes", "--analyst", help="Analyst performing the redaction"),
+    reason: str = typer.Option("external sharing", "--reason", help="Reason recorded in the audit chain"),
+    policy: str = typer.Option("standard", "--policy", help="Redaction policy: standard or minor_involved")
+):
+    """Produce a redacted, shareable copy of a case. The sealed original is never modified."""
+    console.print(f"[cyan]🛡️  Redacting case {case_id} (policy: {policy})...[/cyan]")
+    result = redact_case(
+        case_id,
+        connection=db.get_connection(),
+        analyst=analyst,
+        reason=reason,
+        policy=policy,
+    )
+    if result:
+        path = result.get("output_path")
+        total = result.get("total_redactions", 0)
+        console.print(f"[bold green]✅ Redacted export created ({total} redactions): {path}[/bold green]")
+    else:
+        console.print("[red]Redaction did not complete. Check that the case exists.[/red]")
+
+
+@app.command()
+def referral(
+    case_id: str = typer.Option(..., "--case", help="Case ID"),
+    redact: bool = typer.Option(True, "--redact/--no-redact", help="Redact the referral (on by default)"),
+    policy: str = typer.Option("standard", "--policy", help="Redaction policy when redacting")
+):
+    """Produce a CyberTipline-aligned representative referral export. Redacted by default."""
+    console.print(f"[cyan]📨 Building referral export for {case_id} (redact: {redact})...[/cyan]")
+    result = export_referral(
+        case_id,
+        connection=db.get_connection(),
+        redact=redact,
+        policy=policy,
+    )
+    if result:
+        path = result.get("output_path")
+        console.print(f"[bold green]✅ Referral export created: {path}[/bold green]")
+        console.print("[yellow]Note: this is a representative format for human review, never an autonomous filing.[/yellow]")
+    else:
+        console.print("[red]Referral export did not complete. Check that the case exists.[/red]")
+
+
+@app.command()
+def retention(
+    days: int = typer.Option(90, "--days", help="Retention window in days"),
+    confirm: bool = typer.Option(False, "--confirm", help="Actually purge. Without this flag the command is a safe dry run."),
+    analyst: str = typer.Option("Meca Dismukes", "--analyst", help="Analyst recorded in the audit chain")
+):
+    """Enforce the retention policy. Dry run by default; pass --confirm to purge. The audit chain is always preserved."""
+    mode = "PURGE" if confirm else "DRY RUN"
+    console.print(f"[cyan]🗄️  Retention enforcement ({mode}, window: {days} days)...[/cyan]")
+    if not confirm:
+        console.print("[yellow]Dry run — no data will be deleted. Re-run with --confirm to purge.[/yellow]")
+    result = enforce_retention(
+        retention_days=days,
+        confirm=confirm,
+        connection=db.get_connection(),
+        analyst=analyst,
+    )
+    if result is not None:
+        eligible = result.get("cases", []) if isinstance(result, dict) else result
+        console.print(f"[bold green]✅ Retention check complete. Cases evaluated: {len(eligible)}[/bold green]")
+    else:
+        console.print("[green]✅ Retention check complete.[/green]")
 
 
 @app.command()
