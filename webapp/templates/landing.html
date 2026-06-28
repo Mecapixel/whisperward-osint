@@ -19,6 +19,21 @@
   .auth-btn { font-size: 13px; padding: 14px 28px; }
   .warning-strip { font-size: 14px; }
   .divider { margin: 22px 0; }
+
+  /* Styled auth-key cipher: wider spacing + glow so the masked key reads as a
+     terminal cipher rather than default browser bullets. */
+  #op-key {
+    letter-spacing: 8px;
+    color: var(--red-glow);
+    text-shadow: 0 0 6px rgba(255, 48, 48, 0.45);
+    font-size: 22px;
+  }
+  #op-key::placeholder {
+    letter-spacing: 8px;
+    color: var(--red-glow);
+    opacity: 0.55;
+    text-shadow: 0 0 6px rgba(255, 48, 48, 0.3);
+  }
 </style>
 </head>
 <body>

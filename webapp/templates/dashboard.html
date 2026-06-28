@@ -5,48 +5,21 @@
 <title>WHISPERWARD 26 // CASE FILES</title>
 <link rel="stylesheet" href="/static/css/whisperward.css">
 <style>
-  /* Small additions specific to the live-data dashboard */
-  .case-pending {
-    font-family: var(--font-display);
-    font-size: 11px;
-    padding: 4px 8px;
-    border: 1px solid var(--silver-dim);
-    color: var(--silver-dim);
-    letter-spacing: 1px;
-  }
-  .peak-indicator {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    color: var(--red-glow);
-    margin-top: 4px;
-    letter-spacing: 1px;
-  }
-  .demo-banner {
-    background: rgba(212, 160, 23, 0.1);
-    border: 1px solid #d4a017;
-    color: #d4a017;
-    padding: 8px 16px;
-    font-family: var(--font-mono);
-    font-size: 16px;
-    text-align: center;
-    margin-bottom: 20px;
-    letter-spacing: 1px;
-  }
-  .empty-state {
-    text-align: center;
-    padding: 80px 20px;
-    color: var(--silver-dim);
-    font-family: var(--font-mono);
-    font-size: 22px;
-    grid-column: 1 / -1;
-  }
-  .empty-state .cmd {
-    color: var(--red-glow);
-    margin-top: 16px;
-    display: block;
-    font-size: 18px;
-  }
+  .case-pending { font-family: var(--font-display); font-size: 11px; padding: 4px 8px; border: 1px solid var(--silver-dim); color: var(--silver-dim); letter-spacing: 1px; }
+  .peak-indicator { display: block; font-family: var(--font-mono); font-size: 14px; color: var(--red-glow); margin-top: 4px; letter-spacing: 1px; }
+  .demo-banner { background: rgba(212, 160, 23, 0.1); border: 1px solid #d4a017; color: #d4a017; padding: 8px 16px; font-family: var(--font-mono); font-size: 16px; text-align: center; margin-bottom: 20px; letter-spacing: 1px; }
+  .empty-state { text-align: center; padding: 80px 20px; color: var(--silver-dim); font-family: var(--font-mono); font-size: 22px; grid-column: 1 / -1; }
+  .empty-state .cmd { color: var(--red-glow); margin-top: 16px; display: block; font-size: 18px; }
+  .risk-readout { border: 1px solid var(--silver-dim); background: linear-gradient(180deg, rgba(20,20,20,0.6) 0%, rgba(10,10,10,0.6) 100%); padding: 20px 24px; margin-bottom: 36px; }
+  .risk-readout-title { font-family: var(--font-display); font-size: 12px; color: var(--silver-bright); letter-spacing: 3px; margin-bottom: 18px; }
+  .risk-readout-loading { font-family: var(--font-mono); font-size: 18px; color: var(--silver-dim); letter-spacing: 1px; }
+  .risk-bar-row { display: flex; align-items: center; margin-bottom: 10px; font-family: var(--font-mono); }
+  .risk-bar-label { width: 180px; font-size: 16px; color: var(--silver-bright); letter-spacing: 1px; flex-shrink: 0; }
+  .risk-bar-track { flex: 1; height: 22px; background: rgba(196,196,196,0.05); border: 1px solid var(--silver-dim); position: relative; overflow: hidden; }
+  .risk-bar-fill { height: 100%; width: 0; position: relative; }
+  .risk-bar-fill::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 2px, transparent 2px, transparent 6px); }
+  .risk-bar-count { width: 52px; text-align: right; font-size: 18px; color: var(--silver-bright); margin-left: 18px; flex-shrink: 0; }
+  .case-target { word-break: break-word; overflow-wrap: anywhere; line-height: 1.35; }
 </style>
 </head>
 <body>
@@ -54,7 +27,6 @@
 
 <div class="dashboard-screen">
 
-  <!-- Top operator strip -->
   <div class="hud-header">
     <div class="op-info">
       &gt; OPERATOR: <span>{{ operator|default('MECAPIXEL') }}</span> &nbsp;|&nbsp;
@@ -70,7 +42,6 @@
   </div>
   {% endif %}
 
-  <!-- HUD frame -->
   <div class="hud-frame">
 
     <svg class="hud-svg" viewBox="0 0 1000 600" preserveAspectRatio="none">
@@ -92,6 +63,13 @@
       <div class="hud-subtitle">
         &gt; {{ cases|length }} record{{ 's' if cases|length != 1 else '' }} loaded
         {% if cases %} · sorted by risk score{% endif %}
+      </div>
+
+      <div class="risk-readout" id="riskReadout">
+        <div class="risk-readout-title">// THREAT DISTRIBUTION</div>
+        <div class="risk-readout-chart" id="riskChart">
+          <div class="risk-readout-loading">&gt; querying registry...</div>
+        </div>
       </div>
 
       <div class="case-grid">
@@ -145,7 +123,6 @@
 
 </div>
 
-<!-- ============ POP-OUT FILE CARD ============ -->
 <div class="file-popout-overlay" id="popout">
   <div class="file-card" id="fileCard">
     <span class="corner tl"></span>
@@ -175,6 +152,7 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
   const popout = document.getElementById('popout');
   const fileCard = document.getElementById('fileCard');
@@ -184,14 +162,12 @@
     file.addEventListener('click', () => {
       const d = file.dataset;
       activeFullId = d.fullId;
-
       document.getElementById('popId').textContent       = d.fullId;
       document.getElementById('popTarget').textContent   = d.target;
       document.getElementById('popPlatform').textContent = d.platform;
       document.getElementById('popTargets').textContent  = d.targets;
       document.getElementById('popAnalyses').textContent = d.analyses;
       document.getElementById('popDate').textContent     = d.date;
-
       if (d.risk === 'PENDING') {
         document.getElementById('popScore').textContent = 'PENDING ANALYSIS';
         document.getElementById('popScore').style.color = 'var(--silver-dim)';
@@ -201,7 +177,6 @@
         document.getElementById('popScore').style.color = 'var(--silver-bright)';
         document.getElementById('popStatus').textContent = 'UNDER REVIEW';
       }
-
       const peakRow = document.getElementById('popPeakRow');
       if (d.peak && d.peak !== d.risk && d.peak !== '') {
         document.getElementById('popPeak').textContent = d.peak + ' / 10 ▲';
@@ -209,30 +184,63 @@
       } else {
         peakRow.style.display = 'none';
       }
-
       fileCard.classList.remove('expanding');
       popout.classList.add('active');
     });
   });
 
-  function closePopout() {
-    popout.classList.remove('active');
-  }
-
+  function closePopout() { popout.classList.remove('active'); }
   function openDossier() {
     fileCard.classList.add('expanding');
-    setTimeout(() => {
-      window.location.href = '/case/' + activeFullId;
-    }, 380);
+    setTimeout(() => { window.location.href = '/case/' + activeFullId; }, 380);
   }
+  popout.addEventListener('click', (e) => { if (e.target === popout) closePopout(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePopout(); });
 
-  popout.addEventListener('click', (e) => {
-    if (e.target === popout) closePopout();
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closePopout();
-  });
+  (function () {
+    const TIER_COLORS = {
+      tier3: (getComputedStyle(document.documentElement).getPropertyValue('--red-glow').trim() || '#ff3030'),
+      tier2: '#d4a017',
+      tier1: '#888888',
+      unscored: (getComputedStyle(document.documentElement).getPropertyValue('--silver-dim').trim() || '#6a6a6a'),
+    };
+    function renderRiskChart(series) {
+      const chart = d3.select('#riskChart');
+      chart.html('');
+      const max = d3.max(series, d => d.count) || 1;
+      const rows = chart.selectAll('.risk-bar-row').data(series).enter()
+        .append('div').attr('class', 'risk-bar-row');
+      rows.append('div').attr('class', 'risk-bar-label').text(d => '> ' + d.label);
+      const track = rows.append('div').attr('class', 'risk-bar-track');
+      track.append('div').attr('class', 'risk-bar-fill')
+        .style('background', d => TIER_COLORS[d.tier] || '#888')
+        .style('box-shadow', d => '0 0 8px ' + (TIER_COLORS[d.tier] || '#888'))
+        .style('width', '0%')
+        .transition().duration(800)
+        .style('width', d => Math.max(2, (d.count / max) * 100) + '%');
+      rows.append('div').attr('class', 'risk-bar-count').text(d => d.count);
+    }
+    function loadRiskChart() {
+      fetch('/api/cases/risk-distribution')
+        .then(r => r.json())
+        .then(data => {
+          if (!data.series || data.total === 0) {
+            d3.select('#riskChart').html('<div class="risk-readout-loading">&gt; no scored cases in registry</div>');
+            return;
+          }
+          renderRiskChart(data.series);
+        })
+        .catch(err => {
+          d3.select('#riskChart').html('<div class="risk-readout-loading">&gt; registry query failed</div>');
+          console.error('risk chart load error', err);
+        });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadRiskChart);
+    } else {
+      loadRiskChart();
+    }
+  })();
 </script>
 
 </body>
