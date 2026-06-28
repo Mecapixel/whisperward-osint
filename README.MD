@@ -63,27 +63,37 @@ The full collection and analysis pipeline (live OSINT, local AI) requires the ad
 
 ## Screenshots
 
-**Boot sequence** — live case count pulled from the database
-![Boot screen](docs/screenshots/boot.png)
+<p align="center">
+  <strong>Boot sequence</strong> — live case count pulled from the database<br>
+  <img src="docs/screenshots/boot.png" width="75%" alt="Boot screen">
+</p>
 
-**Operator authentication**
-![Authentication](docs/screenshots/auth.png)
+<p align="center">
+  <strong>Operator authentication</strong><br>
+  <img src="docs/screenshots/auth.png" width="75%" alt="Authentication">
+</p>
 
-**Case registry** — active cases sorted by risk score, with a live threat-distribution chart
-![Case registry dashboard](docs/screenshots/dashboard.png)
+<p align="center">
+  <strong>Threat distribution</strong> — D3 risk-tier breakdown across all active cases<br>
+  <img src="docs/screenshots/01_dashboard_threat_distribution.png" width="75%" alt="Threat distribution">
+</p>
 
-**Threat distribution** — D3 risk-tier breakdown across all active cases
-![Threat distribution](docs/screenshots/01_dashboard_threat_distribution.png)
+<p align="center">
+  <strong>Case registry</strong> — active cases sorted by risk score<br>
+  <img src="docs/screenshots/dashboard.png" width="75%" alt="Case registry dashboard">
+</p>
 
-**Subject dossier** — risk assessment, risk timeline, radial gauge, artifacts, and intel log with live Roblox avatar
-![Subject dossier](docs/screenshots/dossier.png)
+<p align="center">
+  <strong>Classified case file</strong> — quick-view popup<br>
+  <img src="docs/screenshots/case_file.png" width="75%" alt="Classified case file">
+</p>
 
-**Classified case file** — quick-view popup
-![Classified case file](docs/screenshots/case_file.png)
+<p align="center">
+  <strong>Subject dossier</strong> — risk assessment, risk timeline, radial gauge, artifacts, and intel log with live Roblox avatar<br>
+  <img src="docs/screenshots/dossier.png" width="75%" alt="Subject dossier">
+</p>
 
-*Screenshots use a clean test environment with only investigator-created accounts and synthetic data.*
-
----
+<p align="center"><em>Screenshots use a clean test environment with only investigator-created accounts and synthetic data.</em></p>
 
 ## Key Features
 
