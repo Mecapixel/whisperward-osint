@@ -196,6 +196,27 @@ class RobloxPlugin(PlatformPlugin):
                 thumb = await module._get_with_retry(module._get_thumbnail, user_id)
                 if thumb:
                     raw["avatar_url"] = thumb
+
+                # Milestone 8 enrichment. The collector's friends, groups, and
+                # games helpers are best-effort and self-degrading, so a hidden
+                # list or a rate limit yields an empty result rather than an
+                # error. Each is guarded with hasattr so the plugin still works
+                # against an older collector that lacks these methods.
+                if hasattr(module, "_get_friends"):
+                    friends = await module._get_with_retry(module._get_friends, user_id)
+                    if friends is not None:
+                        raw["friends"] = friends
+                        raw["friend_count"] = len(friends)
+                if hasattr(module, "_get_groups"):
+                    groups = await module._get_with_retry(module._get_groups, user_id)
+                    if groups is not None:
+                        raw["groups"] = groups
+                        raw["group_count"] = len(groups)
+                if hasattr(module, "_get_games"):
+                    games = await module._get_with_retry(module._get_games, user_id)
+                    if games is not None:
+                        raw["games"] = games
+                        raw["game_count"] = len(games)
         except Exception as exc:
             raw["fetch_error"] = str(exc)
 
@@ -250,6 +271,61 @@ class RobloxPlugin(PlatformPlugin):
                 "offsite_contact_solicitation",
                 "The profile text invites contact on another platform, a pattern worth review.",
                 0.5))
+
+        # Milestone 8 — signals derived from the enriched friends, groups, and
+        # games data. Every one of these is a conservative lead for a human
+        # analyst, never a determination. The data is public and the thresholds
+        # are deliberately loose so the signal surfaces a pattern to look at, not
+        # a conclusion about a person.
+
+        friends = raw.get("friends") or []
+        friend_count = raw.get("friend_count")
+        groups = raw.get("groups") or []
+        games = raw.get("games") or []
+
+        # A large friend network is context, not an accusation. Surfaced with a
+        # low weight because the number alone proves nothing; it matters only
+        # when an analyst weighs it against the account's age and activity.
+        if isinstance(friend_count, int) and friend_count >= 200:
+            signals.append(RiskSignal(
+                "large_friend_network",
+                "The account has a large public friend list, useful context when "
+                "weighed against the account's age and activity.",
+                0.2))
+
+        # Group names are public text. Surfacing groups whose names contain terms
+        # commonly associated with inappropriate Roblox spaces is a review lead
+        # only. It flags a candidate for a human to look at; it is never a
+        # determination that a group is what the term suggests.
+        review_terms = ["condo", "scented con", "vibe", "18+", "nsfw"]
+        flagged_groups = []
+        for g in groups:
+            name = (g.get("name") or "").lower()
+            if any(term in name for term in review_terms):
+                flagged_groups.append(g.get("name"))
+        if flagged_groups:
+            preview = ", ".join(str(n) for n in flagged_groups[:3] if n)
+            signals.append(RiskSignal(
+                "group_name_review_lead",
+                "One or more group names match terms sometimes associated with "
+                "inappropriate spaces and should be reviewed by an analyst: "
+                f"{preview}. This is a lead for human review, not a determination.",
+                0.4))
+
+        # The same conservative, review-only treatment for created games.
+        flagged_games = []
+        for g in games:
+            name = (g.get("name") or "").lower()
+            if any(term in name for term in review_terms):
+                flagged_games.append(g.get("name"))
+        if flagged_games:
+            preview = ", ".join(str(n) for n in flagged_games[:3] if n)
+            signals.append(RiskSignal(
+                "game_name_review_lead",
+                "One or more created game names match terms worth an analyst's "
+                f"review: {preview}. This is a lead for human review, not a "
+                "determination.",
+                0.4))
 
         return signals
 

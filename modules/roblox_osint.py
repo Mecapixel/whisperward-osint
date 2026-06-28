@@ -31,6 +31,25 @@ class RobloxOSINT(BaseOSINTModule):
                 if thumbnail:
                     data["avatar_url"] = thumbnail
 
+                # Milestone 8 — richer public-data collection. Each of these is
+                # best-effort: the endpoints rate-limit aggressively and can be
+                # hidden by a user's privacy or region settings, so a failure
+                # degrades to an empty result rather than failing the whole scan.
+                friends = await self._get_with_retry(self._get_friends, user_id)
+                if friends is not None:
+                    data["friends"] = friends
+                    data["friend_count"] = len(friends)
+
+                groups = await self._get_with_retry(self._get_groups, user_id)
+                if groups is not None:
+                    data["groups"] = groups
+                    data["group_count"] = len(groups)
+
+                games = await self._get_with_retry(self._get_games, user_id)
+                if games is not None:
+                    data["games"] = games
+                    data["game_count"] = len(games)
+
             artifact_id = db.save_artifact(
                 target_id=target_id,
                 module_name=self.module_name,
@@ -40,6 +59,8 @@ class RobloxOSINT(BaseOSINTModule):
             print(f"    ✅ Roblox profile saved (Artifact ID: {artifact_id})")
             if "displayName" in data:
                 print(f"       Display Name: {data.get('displayName')}")
+            if "friend_count" in data:
+                print(f"       Friends: {data['friend_count']} | Groups: {data.get('group_count', 0)} | Games: {data.get('game_count', 0)}")
 
     async def _get_with_retry(self, func, param):
         for attempt in range(self.max_retries):
@@ -84,3 +105,62 @@ class RobloxOSINT(BaseOSINTModule):
         except:
             pass
         return None
+
+    async def _get_friends(self, user_id: int):
+        """Fetch the user's public friends list. Returns a list of dicts with
+        id, name, and displayName, or an empty list when the list is hidden or
+        unavailable. Public endpoint, no authentication required."""
+        url = f"https://friends.roblox.com/v1/users/{user_id}/friends"
+        try:
+            data = await self.safe_fetch(url)
+            friends = []
+            for f in (data.get("data") or []):
+                friends.append({
+                    "id": f.get("id"),
+                    "name": f.get("name"),
+                    "displayName": f.get("displayName"),
+                })
+            return friends
+        except Exception:
+            return []
+
+    async def _get_groups(self, user_id: int):
+        """Fetch the groups (communities) the user belongs to, with the user's
+        role in each. Returns a list of dicts with group id, name, member count,
+        and the user's role. Public endpoint. Empty list on failure or privacy."""
+        url = f"https://groups.roblox.com/v2/users/{user_id}/groups/roles"
+        try:
+            data = await self.safe_fetch(url)
+            groups = []
+            for entry in (data.get("data") or []):
+                group = entry.get("group", {}) or {}
+                role = entry.get("role", {}) or {}
+                groups.append({
+                    "group_id": group.get("id"),
+                    "name": group.get("name"),
+                    "member_count": group.get("memberCount"),
+                    "role": role.get("name"),
+                })
+            return groups
+        except Exception:
+            return []
+
+    async def _get_games(self, user_id: int):
+        """Fetch the user's public created games. Returns a list of dicts with
+        place/universe id, name, and play count. Best-effort: this endpoint is
+        less consistently public than friends/groups, so it degrades to an empty
+        list rather than failing."""
+        url = f"https://games.roblox.com/v2/users/{user_id}/games?accessFilter=Public&sortOrder=Asc&limit=50"
+        try:
+            data = await self.safe_fetch(url)
+            games = []
+            for g in (data.get("data") or []):
+                games.append({
+                    "universe_id": g.get("id"),
+                    "root_place_id": (g.get("rootPlace") or {}).get("id"),
+                    "name": g.get("name"),
+                    "place_visits": g.get("placeVisits"),
+                })
+            return games
+        except Exception:
+            return []
