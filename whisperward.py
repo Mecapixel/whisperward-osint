@@ -27,6 +27,8 @@ from modules.report_generator import generate_signed_report
 from modules.redaction_engine import redact_case
 from modules.referral_export import export_referral
 from modules.retention_enforcer import enforce_retention
+# M7 CSAM hash detection. Lives at repo root, not under modules/.
+from csam_hash_detector import CSAMHashDetector
 
 app = typer.Typer(help="WhisperWard OSINT - Defensive Online Safety Toolkit")
 console = Console()
@@ -220,6 +222,24 @@ def retention(
         console.print(f"[bold green]✅ Retention check complete. Cases evaluated: {len(eligible)}[/bold green]")
     else:
         console.print("[green]✅ Retention check complete.[/green]")
+
+
+@app.command()
+def csam_status():
+    """Report the status of the CSAM hash-detection adapters. The sensitive
+    integrations (PhotoDNA, NCMEC) are approval-gated and disabled by default;
+    local perceptual hashing is always active. This command surfaces that posture
+    without performing any detection."""
+    console.print("[bold cyan]=== CSAM Hash Detection — Adapter Status ===[/bold cyan]")
+    status = CSAMHashDetector().get_adapter_status()
+    console.print(f"Local database: [green]{status['local_database']}[/green]")
+    photodna = status['photodna']
+    ncmec = status['ncmec']
+    photodna_color = "green" if photodna == "enabled" else "yellow"
+    ncmec_color = "green" if ncmec == "enabled" else "yellow"
+    console.print(f"PhotoDNA:       [{photodna_color}]{photodna}[/{photodna_color}]")
+    console.print(f"NCMEC:          [{ncmec_color}]{ncmec}[/{ncmec_color}]")
+    console.print("[dim]No matched image content is ever stored. Every match requires human review.[/dim]")
 
 
 @app.command()
