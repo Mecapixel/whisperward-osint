@@ -36,6 +36,16 @@ from database import DatabaseManager
 
 SYNTHETIC_LABEL = "[SYNTHETIC GROOMING DEMO — FABRICATED, FOR TESTING ONLY]"
 
+# A real Roblox avatar image, used purely so the synthetic demo case renders an
+# avatar instead of a blank placeholder. This is a direct CDN image URL from an
+# investigator-owned burner account, so it displays in an img tag. The URL is a
+# 30-day signed CDN link; refresh it if it ever stops resolving. The case itself
+# remains clearly labeled synthetic.
+SYNTHETIC_AVATAR_URL = (
+    "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-"
+    "44F0F82C4F2991A2E9BBC686FC599724-Png/420/420/AvatarHeadshot/Png/noFilter"
+)
+
 
 def _iso_days_ago(days: int) -> str:
     """Return an ISO 8601 timestamp `days` in the past, for a young synthetic
@@ -98,7 +108,7 @@ def _build_roblox_artifact(username: str, description: str, account_age_days: in
         "description": description,
         "created": _iso_days_ago(account_age_days),
         "isBanned": False,
-        "avatar_url": None,
+        "avatar_url": SYNTHETIC_AVATAR_URL,
         "friends": [],
         "friend_count": friend_count,
         "groups": groups,

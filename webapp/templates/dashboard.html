@@ -20,6 +20,12 @@
   .risk-bar-fill::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 2px, transparent 2px, transparent 6px); }
   .risk-bar-count { width: 52px; text-align: right; font-size: 18px; color: var(--silver-bright); margin-left: 18px; flex-shrink: 0; }
   .case-target { word-break: break-word; overflow-wrap: anywhere; line-height: 1.35; }
+
+  /* Allow the dashboard to scroll when the case grid grows beyond the viewport. */
+  html, body { overflow-y: auto !important; height: auto !important; min-height: 100%; }
+  .dashboard-screen { min-height: 100vh; height: auto; overflow: visible; }
+  .hud-frame { height: auto; overflow: visible; }
+  .hud-content { height: auto; overflow: visible; }
 </style>
 </head>
 <body>
@@ -66,7 +72,7 @@
       </div>
 
       <div class="risk-readout" id="riskReadout">
-        <div class="risk-readout-title">// THREAT DISTRIBUTION</div>
+        <div class="risk-readout-title">THREAT DISTRIBUTION</div>
         <div class="risk-readout-chart" id="riskChart">
           <div class="risk-readout-loading">&gt; querying registry...</div>
         </div>

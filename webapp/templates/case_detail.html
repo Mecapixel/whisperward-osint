@@ -61,6 +61,29 @@
       .gauge-svg { width: 180px; height: 180px; }
       .gauge-readout { font-family: var(--font-mono); font-size: 32px; letter-spacing: 2px; margin-top: 8px; }
       .gauge-tier { font-family: var(--font-mono); font-size: 16px; letter-spacing: 2px; margin-top: 6px; color: var(--silver-dim); white-space: nowrap; }
+
+      /* ===== M8 Risk breakdown (explainable components) ===== */
+      .breakdown-section { margin-top: 22px; grid-column: 1 / -1; }
+      .breakdown-panel { border: 1px solid var(--silver-dim); background: linear-gradient(180deg, rgba(20,20,20,0.6) 0%, rgba(10,10,10,0.6) 100%); padding: 16px 20px; position: relative; }
+      .breakdown-panel::before { content: ""; position: absolute; top: -1px; left: -1px; right: -1px; height: 3px; background: var(--silver-dim); }
+      .breakdown-title { font-family: var(--font-mono); font-size: 20px; color: var(--silver-bright); letter-spacing: 4px; margin-bottom: 4px; text-transform: uppercase; }
+      .breakdown-sub { font-family: var(--font-mono); font-size: 13px; color: var(--silver-dim); letter-spacing: 1px; margin-bottom: 16px; }
+      .breakdown-tier { font-family: var(--font-mono); font-size: 16px; letter-spacing: 2px; margin-bottom: 16px; }
+      .component-row { margin-bottom: 12px; }
+      .component-head { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 13px; letter-spacing: 1px; margin-bottom: 4px; }
+      .component-name { color: var(--silver-bright); text-transform: uppercase; }
+      .component-weight { color: var(--silver-dim); }
+      .component-track { width: 100%; height: 14px; border: 1px solid var(--silver-dim); background: var(--bg-panel); padding: 2px; }
+      .component-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #4a9d4a 0%, #d4a017 60%, var(--red-blood) 100%); box-shadow: 0 0 6px rgba(255,48,48,0.25); transition: width 0.8s ease; }
+      .component-expl { font-family: var(--font-mono); font-size: 12px; color: var(--silver-dim); margin-top: 3px; letter-spacing: 0.5px; }
+      .signals-list { margin-top: 16px; list-style: none; padding: 0; }
+      .signals-list li { font-family: var(--font-mono); font-size: 14px; color: var(--silver); padding: 4px 0; letter-spacing: 0.5px; }
+      .signals-list li::before { content: "> "; color: var(--red-glow); }
+      .leads-block { margin-top: 16px; border: 1px solid var(--red-deep); background: rgba(40,10,10,0.3); padding: 10px 14px; }
+      .leads-block .leads-label { font-family: var(--font-mono); font-size: 13px; color: var(--red-glow); letter-spacing: 2px; margin-bottom: 6px; text-transform: uppercase; }
+      .leads-block .leads-note { font-family: var(--font-mono); font-size: 12px; color: var(--silver-dim); }
+      .breakdown-empty { font-family: var(--font-mono); font-size: 14px; color: var(--silver-dim); letter-spacing: 1px; padding: 20px 0; }
+
       body { overflow-y: auto !important; }
     </style>
 </head>
@@ -184,16 +207,27 @@
     <!-- ===== Risk visualization: timeline + gauge ===== -->
     <div class="risk-viz-section">
       <div class="risk-panel">
-        <div class="risk-panel-title">// RISK TIMELINE</div>
+        <div class="risk-panel-title">RISK TIMELINE</div>
         <div id="timelineHost">
           <div class="timeline-empty">&gt; loading scan history...</div>
         </div>
       </div>
       <div class="risk-panel gauge-wrap">
-        <div class="risk-panel-title">// CURRENT RISK</div>
+        <div class="risk-panel-title">CURRENT RISK</div>
         <svg class="gauge-svg" id="riskGauge" viewBox="0 0 100 100"></svg>
         <div class="gauge-readout" id="gaugeReadout">—</div>
         <div class="gauge-tier" id="gaugeTier"></div>
+      </div>
+    </div>
+
+    <!-- ===== M8 Risk breakdown: explainable components ===== -->
+    <div class="breakdown-section">
+      <div class="breakdown-panel">
+        <div class="breakdown-title">RISK BREAKDOWN</div>
+        <div class="breakdown-sub">explainable component contributions from the structured risk engine</div>
+        <div id="breakdownHost">
+          <div class="breakdown-empty">&gt; loading risk breakdown...</div>
+        </div>
       </div>
     </div>
 
@@ -300,6 +334,70 @@
     }
   }
 
+  /* ----- M8 Risk breakdown (explainable components) ----- */
+  function tierColorFromLabel(label) {
+    if (!label) return GREY;
+    const L = label.toUpperCase();
+    if (L.indexOf('ESCALATE') !== -1 || L.indexOf('TIER 3') !== -1) return RED;
+    if (L.indexOf('REVIEW') !== -1 || L.indexOf('TIER 2') !== -1) return AMBER;
+    return GREY;
+  }
+
+  function drawBreakdown(data) {
+    const host = d3.select('#breakdownHost');
+    host.html('');
+
+    if (!data || !data.found || !data.components || data.components.length === 0) {
+      host.append('div').attr('class', 'breakdown-empty')
+        .html('&gt; no structured breakdown available for this case');
+      return;
+    }
+
+    // Tier line
+    const tierColor = tierColorFromLabel(data.tier_label);
+    host.append('div').attr('class', 'breakdown-tier')
+      .style('color', tierColor)
+      .text(data.tier_label ? data.tier_label.toUpperCase() : '');
+
+    // Component bars. raw_score is 0..1; the bar width shows the raw signal
+    // strength, the label shows the weighted contribution to the final score.
+    data.components.forEach(function (c) {
+      // Skip components that contributed nothing, so the panel shows what mattered.
+      if (!(c.raw_score > 0)) return;
+      const row = host.append('div').attr('class', 'component-row');
+      const head = row.append('div').attr('class', 'component-head');
+      const nameClean = (c.name || '').replace(/_/g, ' ');
+      head.append('span').attr('class', 'component-name').text(nameClean);
+      const wpct = ((c.weight || 0) * 100).toFixed(0);
+      const contrib = ((c.weighted_score || 0) * 10).toFixed(2);
+      head.append('span').attr('class', 'component-weight')
+        .text('weight ' + wpct + '%  ·  +' + contrib + ' pts');
+      const track = row.append('div').attr('class', 'component-track');
+      const fill = track.append('div').attr('class', 'component-fill');
+      const pct = Math.max(0, Math.min(1, c.raw_score || 0)) * 100;
+      setTimeout(function () { fill.style('width', pct + '%'); }, 50);
+      if (c.explanation) {
+        row.append('div').attr('class', 'component-expl').text(c.explanation);
+      }
+    });
+
+    // Top signals
+    if (data.top_signals && data.top_signals.length) {
+      const ul = host.append('ul').attr('class', 'signals-list');
+      data.top_signals.forEach(function (s) {
+        ul.append('li').text(s);
+      });
+    }
+
+    // Review-only leads (conservative, never determinations)
+    if (data.review_leads && data.review_leads.length) {
+      const block = host.append('div').attr('class', 'leads-block');
+      block.append('div').attr('class', 'leads-label').text('Review leads — for human attention');
+      block.append('div').attr('class', 'leads-note')
+        .text('Surfaced for analyst review, not determinations: ' + data.review_leads.join(', '));
+    }
+  }
+
   // gauge from the value already in the page
   drawGauge(LATEST_RISK);
 
@@ -311,6 +409,16 @@
       .catch(err => { drawTimeline([]); console.warn('timeline load failed', err); });
   } else {
     drawTimeline([]);
+  }
+
+  // breakdown from the API
+  if (CASE_ID) {
+    fetch('/api/case/' + CASE_ID + '/signals')
+      .then(r => r.json())
+      .then(data => drawBreakdown(data))
+      .catch(err => { drawBreakdown(null); console.warn('breakdown load failed', err); });
+  } else {
+    drawBreakdown(null);
   }
 </script>
 

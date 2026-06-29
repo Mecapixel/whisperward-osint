@@ -23,6 +23,7 @@ story as the reports.
 
 from __future__ import annotations
 
+import json
 from typing import Any, Dict, List
 
 from fastapi import APIRouter
@@ -215,6 +216,87 @@ async def case_risk_timeline(case_id: str) -> Dict[str, Any]:
     except Exception:
         points = []
     return {"case_id": case_id, "points": points, "count": len(points)}
+
+
+@router.get("/case/{case_id}/signals")
+async def case_signals(case_id: str) -> Dict[str, Any]:
+    """Returns the explainable breakdown of the case's most recent structured
+    analysis: the weighted score components, the tier, the top signals, and the
+    review-only leads. This is what lets the case page show why a score is what it
+    is, rather than only the number. Reads the findings the risk engine persisted.
+
+    When the latest analysis predates the structured engine, or carries no
+    component breakdown, the route returns found True with empty components and an
+    explanatory note, so the page can show a clean 'no structured breakdown'
+    state rather than an error."""
+    result: Dict[str, Any] = {
+        "case_id": case_id,
+        "found": False,
+        "risk_score": None,
+        "tier_label": None,
+        "components": [],
+        "top_signals": [],
+        "review_leads": [],
+        "explanation": None,
+        "analysis_type": None,
+    }
+
+    try:
+        conn = _db.get_connection()
+        row = conn.execute(
+            """
+            SELECT ar.risk_score AS score, ar.findings AS findings,
+                   ar.analysis_type AS analysis_type
+            FROM targets t
+            JOIN analysis_results ar ON ar.target_id = t.target_id
+            WHERE t.case_id = ?
+            ORDER BY ar.result_id DESC
+            LIMIT 1
+            """,
+            (case_id,)
+        ).fetchone()
+    except Exception:
+        row = None
+
+    if not row:
+        return result
+
+    result["found"] = True
+    result["risk_score"] = row["score"]
+    result["analysis_type"] = row["analysis_type"]
+
+    findings_raw = row["findings"]
+    findings: Dict[str, Any] = {}
+    if findings_raw:
+        try:
+            parsed = json.loads(findings_raw)
+            if isinstance(parsed, dict):
+                findings = parsed
+        except (ValueError, TypeError):
+            findings = {}
+
+    # The structured engine stores these keys. An older AI-only analysis will not
+    # have them, which the page treats as a no-breakdown state.
+    result["tier_label"] = findings.get("tier_label")
+    result["explanation"] = findings.get("explanation")
+    result["top_signals"] = findings.get("top_signals", []) or []
+    result["review_leads"] = findings.get("review_leads", []) or []
+
+    components = findings.get("components", []) or []
+    cleaned: List[Dict[str, Any]] = []
+    for c in components:
+        if not isinstance(c, dict):
+            continue
+        cleaned.append({
+            "name": c.get("name"),
+            "weight": c.get("weight"),
+            "raw_score": c.get("raw_score"),
+            "weighted_score": c.get("weighted_score"),
+            "explanation": c.get("explanation"),
+        })
+    result["components"] = cleaned
+
+    return result
 
 
 @router.get("/platforms")
