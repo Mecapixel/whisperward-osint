@@ -20,6 +20,17 @@ app.mount("/static", StaticFiles(directory="webapp/static"), name="static")
 db = DatabaseManager()
 db.init()
 
+# On a stateless deployment (for example the free Render tier) the database is
+# empty on every start. Seed clearly labeled synthetic demo cases so the public
+# demo shows the real scoring and visualizations rather than an empty registry.
+# The seeder guards itself and does nothing when any case already exists, so it
+# never disturbs a real working database.
+try:
+    from seed_demo import seed_if_empty
+    seed_if_empty(db)
+except Exception as _seed_exc:
+    print(f"[main] demo seeding skipped: {_seed_exc}")
+
 app.include_router(api_router)
 
 

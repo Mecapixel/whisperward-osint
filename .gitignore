@@ -81,3 +81,17 @@ data/geoip/
 data/proxy/
 
 data/signing/
+
+# Development helper scripts (not part of the application)
+list_synthetic.py
+delete_case.py
+get_avatar.py
+get_userid.py
+check_synth_avatar.py
+clean_stale_analyses.py
+cleanup_test_cases.py
+inspect_test_cases.py
+
+# Backup and scratch files
+*.bak
+*.py.bak
