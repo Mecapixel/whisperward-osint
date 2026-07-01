@@ -65,32 +65,37 @@ The full collection and analysis pipeline (live OSINT, local AI) requires the ad
 
 <p align="center">
   <strong>Boot sequence</strong> — live case count pulled from the database<br>
-  <img src="docs/screenshots/boot.png" width="75%" alt="Boot screen">
+  <img src="docs/screenshots/Whisperward_Loading.png" width="75%" alt="Boot screen">
 </p>
 
 <p align="center">
   <strong>Operator authentication</strong><br>
-  <img src="docs/screenshots/auth.png" width="75%" alt="Authentication">
+  <img src="docs/screenshots/access.png" width="75%" alt="Operator authentication">
 </p>
 
 <p align="center">
-  <strong>Threat distribution</strong> — D3 risk-tier breakdown across all active cases<br>
-  <img src="docs/screenshots/01_dashboard_threat_distribution.png" width="75%" alt="Threat distribution">
-</p>
-
-<p align="center">
-  <strong>Case registry</strong> — active cases sorted by risk score<br>
-  <img src="docs/screenshots/dashboard.png" width="75%" alt="Case registry dashboard">
+  <strong>Case registry</strong> — active cases sorted by risk score, with the D3 threat-tier distribution across all active cases<br>
+  <img src="docs/screenshots/dashboard.png" width="75%" alt="Case registry with threat distribution">
 </p>
 
 <p align="center">
   <strong>Classified case file</strong> — quick-view popup<br>
-  <img src="docs/screenshots/case_file.png" width="75%" alt="Classified case file">
+  <img src="docs/screenshots/classified_case_file.png" width="75%" alt="Classified case file">
 </p>
 
 <p align="center">
-  <strong>Subject dossier</strong> — risk assessment, risk timeline, radial gauge, artifacts, and intel log with live Roblox avatar<br>
-  <img src="docs/screenshots/dossier.png" width="75%" alt="Subject dossier">
+  <strong>Subject dossier</strong> — risk assessment, artifacts, and live Roblox avatar<br>
+  <img src="docs/screenshots/Synthetic_case.png" width="75%" alt="Subject dossier">
+</p>
+
+<p align="center">
+  <strong>Risk timeline and radial gauge</strong> — per-case scoring history and current-risk gauge<br>
+  <img src="docs/screenshots/risk_gauge.png" width="75%" alt="Risk timeline and current-risk radial gauge">
+</p>
+
+<p align="center">
+  <strong>Risk breakdown</strong> — explainable component contributions from the structured risk engine, with the terminal intel log<br>
+  <img src="docs/screenshots/case_breakdown.png" width="75%" alt="Explainable risk breakdown and intel log">
 </p>
 
 <p align="center"><em>Screenshots use a clean test environment with only investigator-created accounts and synthetic data.</em></p>
