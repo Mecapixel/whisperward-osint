@@ -53,3 +53,10 @@ pybreaker
 # Phase 4 — CSAM hash detection (already installed)
 # imagehash already listed above
 # Pillow already listed above
+
+# Local AI analysis (Ollama client + RAG knowledge base)
+ollama
+chromadb
+
+# Logging (modules/logger.py)
+loguru

@@ -81,10 +81,13 @@ def _install_stub_db():
 
 def _load_router_module():
     _install_stub_db()
+    # Resolve relative to the repository root (this file's parent directory)
+    # so the test works whether it lives at the root or under tests/.
     here = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(here, "webapp", "api_routes.py")
+    root = os.path.dirname(here) if os.path.basename(here) == "tests" else here
+    path = os.path.join(root, "webapp", "api_routes.py")
     if not os.path.exists(path):
-        path = os.path.join(here, "api_routes.py")
+        path = os.path.join(root, "api_routes.py")
     spec = importlib.util.spec_from_file_location("api_routes_under_test", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

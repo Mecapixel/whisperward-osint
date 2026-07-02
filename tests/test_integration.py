@@ -8,6 +8,7 @@ Uses in-memory/temp SQLite — no real API calls, no real Ollama, no real user d
 """
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -81,11 +82,30 @@ class TestFullPipeline:
             raw_data={"username": "synthetic_pipeline_user_001", "platform": "roblox"},
         )
 
+        # Milestone 8 contract: the persisted score comes from the structured
+        # RiskEngine reading the target's collected artifacts. The AI is run for
+        # qualitative context only; its number (deliberately absurd here) must
+        # never become the score. The profile description below is the synthetic
+        # grooming text the classifier scans in this path, paired with a brand
+        # new account, so the engine has real signals to score.
+        test_db.save_artifact(
+            target_id=target_id,
+            module_name="RobloxOSINT",
+            artifact_type="profile",
+            raw_data={
+                "username": "synthetic_pipeline_user_001",
+                "platform": "roblox",
+                "description": "let's keep this just between us, don't tell your parents",
+                "friend_count": 250,
+                "created": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
         with patch("modules.behavioral.AIEngine") as mock_ai_class:
             mock_ai = MagicMock()
             mock_ai.analyze_behavior.return_value = {
                 "analysis_type": "ai_rag_behavioral",
-                "risk_score": 6.5,
+                "risk_score": 99.9,
                 "findings": {"summary": "synthetic pipeline test"},
             }
             mock_ai_class.return_value = mock_ai
@@ -98,10 +118,17 @@ class TestFullPipeline:
                 db=test_db,
             )
 
-        assert result["risk_score"] == 6.5
+        # The score is the engine's, never the AI's.
+        assert result["analysis_type"] == "risk_engine_v1"
+        assert result["risk_score"] != 99.9
+        assert 0.0 < result["risk_score"] <= 10.0
 
+        # The AI context is preserved for the analyst, not folded into the number.
+        assert result["findings"].get("ai_context") == {"summary": "synthetic pipeline test"}
+
+        # The persisted case risk matches what the engine returned.
         risk = test_db.get_case_risk(case_id)
-        assert risk["peak_risk"] == 6.5
+        assert risk["peak_risk"] == result["risk_score"]
 
     @pytest.mark.asyncio
     async def test_roblox_collect_integrates_with_db(self, test_db):

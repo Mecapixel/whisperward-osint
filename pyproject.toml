@@ -1,28 +1,52 @@
 [project]
 name = "whisperward-osint"
-version = "0.4.0"
+version = "4.0.0"
 description = "Defensive OSINT Platform for Online Safety Investigations"
-readme = "README.md"
+readme = "README.MD"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = {text = "AGPL-3.0-only"}
 authors = [
     {name = "Meca Dismukes", email = "meca@pixora.inc"}
 ]
 
+# Runtime dependencies mirror requirements.txt, which remains the canonical
+# install path documented in the README. Keep the two in sync when adding
+# dependencies.
 dependencies = [
-    "typer[all]",
-    "rich",
+    "fastapi",
+    "uvicorn[standard]",
+    "jinja2",
+    "python-multipart",
     "requests",
     "aiohttp",
     "Pillow",
     "imagehash",
     "beautifulsoup4",
     "lxml",
+    "python-dotenv",
+    "sqlalchemy",
+    "reportlab",
+    "typer",
+    "rich",
+    "pyrate-limiter",
+    "rapidfuzz",
+    "networkx",
+    "sentence-transformers",
+    "geoip2",
+    "pyhanko",
+    "pyhanko-certvalidator",
+    "structlog",
+    "faker",
+    "pybreaker",
+    "ollama",
+    "chromadb",
+    "loguru",
+]
+
+[project.optional-dependencies]
+test = [
     "pytest",
     "pytest-asyncio",
-    "tenacity",
-    "python-dotenv",
-    "loguru",
 ]
 
 [project.scripts]

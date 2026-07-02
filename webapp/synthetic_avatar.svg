@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" role="img" aria-label="Synthetic demo subject avatar">
+  <!-- WhisperWard synthetic demo avatar. Entirely fabricated placeholder art
+       served locally so the public demo never depends on a rotating CDN URL. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#101c14"/>
+      <stop offset="100%" stop-color="#060a07"/>
+    </radialGradient>
+  </defs>
+  <rect width="420" height="420" fill="url(#bg)"/>
+  <g stroke="#1d3a26" stroke-width="1" opacity="0.6">
+    <path d="M0 70 H420 M0 140 H420 M0 210 H420 M0 280 H420 M0 350 H420"/>
+    <path d="M70 0 V420 M140 0 V420 M210 0 V420 M280 0 V420 M350 0 V420"/>
+  </g>
+  <g fill="none" stroke="#39ff7a" stroke-width="6" opacity="0.9">
+    <circle cx="210" cy="160" r="62"/>
+    <path d="M96 340 C96 268 150 232 210 232 C270 232 324 268 324 340"/>
+  </g>
+  <g fill="#39ff7a" opacity="0.9">
+    <rect x="188" y="140" width="12" height="12"/>
+    <rect x="220" y="140" width="12" height="12"/>
+  </g>
+  <rect x="20" y="20" width="380" height="380" fill="none" stroke="#39ff7a" stroke-width="2" opacity="0.35"/>
+  <text x="210" y="398" text-anchor="middle" font-family="monospace" font-size="18" fill="#39ff7a" opacity="0.85">SYNTHETIC SUBJECT — FABRICATED</text>
+</svg>

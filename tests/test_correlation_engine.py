@@ -350,8 +350,16 @@ class TestEntityClustering:
 class TestSemanticPath:
 
     def test_engine_runs_with_semantic_requested(self):
-        # If sentence-transformers is installed this exercises the real path.
-        # If not, use_semantic auto-disables and this still runs clean.
+        # If sentence-transformers is installed and the embedding model is
+        # available (cached locally or downloadable) this exercises the real
+        # semantic path. If the package is missing, use_semantic auto-disables
+        # and this still runs clean. If the package is present but the model
+        # cannot be loaded — offline machine, restricted network, cold cache —
+        # skip rather than fail: model availability is an environment property,
+        # not a property of this code.
         engine = CorrelationEngine(use_semantic=True)
-        result = engine.correlate(MATCH_A, MATCH_B)
+        try:
+            result = engine.correlate(MATCH_A, MATCH_B)
+        except OSError as exc:
+            pytest.skip(f"embedding model unavailable in this environment: {exc}")
         assert 0.0 <= result.correlation_strength <= 1.0

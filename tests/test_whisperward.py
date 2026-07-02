@@ -6,8 +6,10 @@ from modules.roblox_osint import RobloxOSINT
 from modules.sherlock_integration import SherlockIntegration
 
 @pytest.fixture
-def db():
-    db = DatabaseManager()
+def db(tmp_path):
+    # Isolated per-test database. Using the default path would write a real
+    # whisperward.db into the working directory every time the suite runs.
+    db = DatabaseManager(db_path=str(tmp_path / "test_whisperward.db"))
     db.init()
     return db
 

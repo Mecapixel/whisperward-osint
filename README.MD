@@ -131,11 +131,15 @@ The full collection and analysis pipeline (live OSINT, local AI) requires the ad
 **Engineering**
 - 408 passing pytest tests, structured logging, rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
 
+**Correlation and enrichment**
+- Cross-platform correlation engine fusing five rarity-weighted signals — username (RapidFuzz), stylometry, activity timing, shared network, and perceptual avatar hashing — with NetworkX identity clustering, contradiction checking, and per-signal rationale (complete and tested; CLI integration as a first-class `correlate` command is the next roadmap item)
+- IP enrichment and anonymization (Tor / VPN / hosting) detection, fully offline by design — no investigated address is ever transmitted to a third party
+- Roblox investigation enrichment built on the plugin architecture, feeding review-only leads to the risk engine
+- CSAM hash detection module — architecture complete and tested, approval-gated and disabled by default pending external authorization (hash and metadata only, never image content)
+
 ### In active development
-- Cross-platform correlation engine fusing username, stylometry, timing, network, and avatar signals
-- IP enrichment and anonymization (Tor / VPN) detection, offline by design
-- CSAM hash detection module — architecture complete, approval-gated and disabled by default
-- Roblox investigation module — deeper platform-specific investigation built on the plugin architecture
+- Discord public OSINT module implementing the existing plugin contract
+- CLI `correlate` command wiring the correlation engine into the investigation pipeline
 
 ---
 

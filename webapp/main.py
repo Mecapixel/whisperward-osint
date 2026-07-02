@@ -1,12 +1,17 @@
 # webapp/main.py
-from fastapi import FastAPI, Request, Form
+import hashlib
+import hmac
+import json
+import os
+import secrets
+import sys
+from datetime import datetime, timezone
+
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
-import sys
-import os
-import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -32,6 +37,45 @@ except Exception as _seed_exc:
     print(f"[main] demo seeding skipped: {_seed_exc}")
 
 app.include_router(api_router)
+
+
+# ── Operator session ─────────────────────────────────────────────────────────
+# Chain of custody starts with operator identity, so the web layer enforces it
+# rather than merely displaying it: the auth step issues an HMAC-signed session
+# cookie carrying the operator name, and the dashboard and case pages verify
+# that signature before rendering. Set WHISPERWARD_SESSION_SECRET in the
+# environment for sessions that survive restarts; without it a fresh secret is
+# generated per boot, which simply means operators re-authenticate after a
+# restart. This is deliberately session-layer identity for the demonstration
+# interface, not credential verification — the authoritative operator record
+# lives in the chain-of-custody log.
+
+_SESSION_SECRET = (os.getenv("WHISPERWARD_SESSION_SECRET") or secrets.token_hex(32)).encode()
+_SESSION_COOKIE = "ww_session"
+
+
+def _sign(value: str) -> str:
+    return hmac.new(_SESSION_SECRET, value.encode(), hashlib.sha256).hexdigest()
+
+
+def _make_session(operator: str) -> str:
+    operator = (operator or "OPERATOR").strip().upper()[:32] or "OPERATOR"
+    return f"{operator}|{_sign(operator)}"
+
+
+def _read_session(request: Request):
+    """Return the operator name from a validly signed session cookie, else None."""
+    raw = request.cookies.get(_SESSION_COOKIE, "")
+    if "|" not in raw:
+        return None
+    operator, signature = raw.rsplit("|", 1)
+    if hmac.compare_digest(_sign(operator), signature):
+        return operator
+    return None
+
+
+def _session_date() -> str:
+    return datetime.now(timezone.utc).strftime("%Y.%m.%d")
 
 
 DEMO_CASES = [
@@ -100,11 +144,29 @@ async def landing(request: Request):
 
 @app.post("/auth")
 async def auth(operator: str = Form(...), auth_key: str = Form(...)):
-    return RedirectResponse(url="/dashboard", status_code=303)
+    response = RedirectResponse(url="/dashboard", status_code=303)
+    response.set_cookie(
+        key=_SESSION_COOKIE,
+        value=_make_session(operator),
+        httponly=True,
+        samesite="lax",
+    )
+    return response
+
+
+@app.get("/logout")
+async def logout():
+    response = RedirectResponse(url="/landing", status_code=303)
+    response.delete_cookie(_SESSION_COOKIE)
+    return response
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
+    operator = _read_session(request)
+    if operator is None:
+        return RedirectResponse(url="/landing", status_code=303)
+
     try:
         real_cases = db.get_all_cases()
     except Exception as e:
@@ -121,13 +183,17 @@ async def dashboard(request: Request):
     return templates.TemplateResponse(request, "dashboard.html", {
         "cases": cases,
         "demo_mode": demo_mode,
-        "operator": "MECAPIXEL",
-        "session_date": "2026.05.24",
+        "operator": operator,
+        "session_date": _session_date(),
     })
 
 
 @app.get("/case/{case_id}", response_class=HTMLResponse)
 async def case_detail(request: Request, case_id: str):
+    operator = _read_session(request)
+    if operator is None:
+        return RedirectResponse(url="/landing", status_code=303)
+
     case_data = db.get_case(case_id)
     targets = db.get_case_targets(case_id) if case_data else []
     summary = db.get_case_summary(case_id) if case_data else {}
@@ -147,8 +213,9 @@ async def case_detail(request: Request, case_id: str):
         "peak_risk": peak_risk,
         "analysis_count": analysis_count,
         "avatar_url": avatar_url,
+        "operator": operator,
     })
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8003)
+    uvicorn.run("webapp.main:app", host="0.0.0.0", port=8003, reload=True)

@@ -116,11 +116,16 @@ class TestEvidencePackager:
 # Behavioral module tests
 # ─────────────────────────────────────────────
 class TestBehavioral:
-    def test_analyze_text_rule_based_fallback(self):
+    def test_analyze_text_structured_without_target(self):
+        # Milestone 8 contract: the score comes from the structured RiskEngine,
+        # never from the AI. Without a target and database there are no collected
+        # artifacts to score against, so the result is an honest 0.0 under the
+        # risk_engine_v1 analysis type rather than an invented number.
         result = analyze_text("synthetic test content", use_ai=False)
         assert isinstance(result, dict)
         assert "risk_score" in result
-        assert result["analysis_type"] == "rule_based"
+        assert result["analysis_type"] == "risk_engine_v1"
+        assert result["risk_score"] == 0.0
 
     def test_analyze_text_ai_failure_fallback(self):
         with patch("modules.behavioral.AIEngine") as mock_ai_class:

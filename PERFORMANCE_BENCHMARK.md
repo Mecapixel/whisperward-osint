@@ -1,6 +1,6 @@
 # WhisperWard OSINT — Performance Benchmark
 
-**Version:** 4.0 | **Last Updated:** June 2026 | **Hardware:** SHADYMECCA
+**Version:** 4.1 | **Last Updated:** June 2026 | **Reference hardware:** see specification below
 
 ---
 
@@ -8,7 +8,7 @@
 
 | Component | Specification |
 |---|---|
-| Machine | HP Victus Gaming Laptop |
+| Machine | HP Victus gaming laptop (development reference machine) |
 | CPU | Intel i5-12450H |
 | RAM | 64GB Kingston Fury DDR4-3200 |
 | GPU | NVIDIA RTX 3050 4GB VRAM |
@@ -32,7 +32,7 @@
 
 ### Full Pipeline Scan Latency
 
-Measured from username input to evidence package output on SHADYMECCA.
+Measured from username input to evidence package output on the reference hardware above.
 
 | Component | Avg Latency | Notes |
 |---|---|---|
@@ -59,8 +59,8 @@ Run automatically on each release via `pytest` and `precision_recall_reporter.py
 
 | Metric | Result | Target | Pass |
 |---|---|---|---|
-| Total tests | 99 | N/A | N/A |
-| Test execution time | Under 10 seconds | N/A | Yes |
+| Total tests | 408 | N/A | N/A |
+| Test execution time | Under 20 seconds | N/A | Yes |
 | False positive rate | Evaluated per release | Under 15% | Enforced |
 | False negative rate | Evaluated per release | Under 5% | Enforced |
 
@@ -68,7 +68,7 @@ Run automatically on each release via `pytest` and `precision_recall_reporter.py
 
 ## Reproduction Instructions
 
-To reproduce these benchmarks on SHADYMECCA:
+To reproduce these benchmarks on any machine:
 
 ```bash
 python whisperward.py init-db
@@ -77,7 +77,7 @@ python whisperward.py add-target --case <CASE-ID> --username synthetic_benchmark
 python whisperward.py run --case <CASE-ID>
 ```
 
-Time the `run` command with PowerShell:
+Time the `run` command (PowerShell shown; use `time` on Linux/macOS):
 
 ```powershell
 Measure-Command { python whisperward.py run --case <CASE-ID> }
@@ -85,4 +85,4 @@ Measure-Command { python whisperward.py run --case <CASE-ID> }
 
 ---
 
-*Benchmarks updated with each major release. Results reflect SHADYMECCA hardware and may vary on other systems.*
+*Benchmarks updated with each major release. Results reflect the reference hardware above and will vary on other systems.*
