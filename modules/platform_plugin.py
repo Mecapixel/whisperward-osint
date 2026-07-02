@@ -331,26 +331,131 @@ class RobloxPlugin(PlatformPlugin):
 
 
 class DiscordPlugin(PlatformPlugin):
-    """Placeholder for Discord. The interface is defined so Milestone 8, the cross
-    platform investigation work, can implement fetching and signals against a
-    stable contract. Until then the plugin reports itself unavailable and returns
-    an empty normalized profile, so the rest of the system treats Discord as a
-    known but not yet implemented platform rather than an error."""
+    """Wraps the DiscordOSINT collector. Like the Roblox plugin, fetching and
+    artifact persistence are delegated to the collector unchanged; this plugin
+    adds normalization into the common profile shape and the Discord specific
+    risk signals.
+
+    Discord is a public-signal-only platform here. The collector resolves invite
+    codes and widget-enabled guild ids and never touches a private, token-gated
+    endpoint, so 'username' at this layer means a public Discord reference (an
+    invite or a guild id), not an arbitrary account name. That boundary is a
+    deliberate design choice, documented in modules/discord_osint.py, not a gap.
+    """
 
     platform_name = "discord"
 
+    def __init__(self):
+        self._module_cls = None
+        try:
+            from .discord_osint import DiscordOSINT
+            self._module_cls = DiscordOSINT
+        except Exception:
+            try:
+                from modules.discord_osint import DiscordOSINT
+                self._module_cls = DiscordOSINT
+            except Exception:
+                self._module_cls = None
+
     def is_available(self) -> bool:
-        return False
+        return self._module_cls is not None
 
     async def fetch_profile(self, username: str, db=None, case_id: Optional[str] = None,
                             target_id: Optional[int] = None) -> Dict[str, Any]:
-        return {"username": username, "platform": "discord",
-                "note": "Discord collection is not yet implemented."}
+        """Delegates to DiscordOSINT. When a db and target_id are supplied the
+        collector persists an artifact exactly as the Roblox path does. The raw
+        public payload is returned for normalization either way. When the
+        collector is unavailable an annotated empty payload is returned so the
+        pipeline degrades rather than crashing."""
+        if self._module_cls is None:
+            return {"username": username, "platform": "discord",
+                    "collection_note": "Discord collector is not importable."}
+        module = self._module_cls()
+        if db is not None and target_id is not None:
+            # collect() both persists and returns the payload.
+            return await module.collect(username, case_id, db, target_id)
+        # No persistence context: fetch without saving.
+        return await module.fetch(username)
 
     def normalize(self, raw: Dict[str, Any], username: str) -> Dict[str, Any]:
         profile = empty_profile(self.platform_name, username)
         profile["raw"] = raw or {}
+        # A Discord "profile" is a public server or invite view. The server is the
+        # subject of the normalized shape: its name is the display_name, its
+        # description the description, its id the platform_uid, its icon the
+        # avatar. This keeps Discord consumable by the same correlation and risk
+        # code that reads any other platform's normalized profile.
+        profile["platform_uid"] = raw.get("server_id") or raw.get("guild_id")
+        profile["display_name"] = raw.get("server_name")
+        profile["description"] = raw.get("server_description")
+        profile["avatar_url"] = raw.get("server_icon_url")
+        profile["flags"] = {
+            "reference_type": raw.get("reference_type"),
+            "public_data_only": bool(raw.get("public_data_only", True)),
+            "resolved": bool(raw.get("server_name")),
+        }
         return profile
+
+    def risk_signals(self, profile: Dict[str, Any]) -> List[RiskSignal]:
+        """Declares Discord specific signals from public server data. Every one is
+        a conservative lead for a human analyst, never a determination. The data
+        is public server metadata; the thresholds are deliberately loose so a
+        signal surfaces a pattern to look at, not a conclusion about a person or a
+        community."""
+        signals: List[RiskSignal] = []
+        raw = profile.get("raw", {})
+
+        description = (profile.get("description") or "").lower()
+        server_name = (profile.get("display_name") or "").lower()
+        features = [str(f).lower() for f in (raw.get("server_features") or [])]
+
+        # Server or channel names and descriptions are public text. Terms
+        # commonly associated with inappropriate Discord spaces are surfaced as a
+        # review lead only, exactly as the Roblox plugin does for group and game
+        # names. This flags a candidate for a human to look at; it never asserts
+        # what the space is.
+        review_terms = ["nsfw", "18+", "e-girl", "e-boy", "condo", "dating",
+                        "hookup", "teen dating", "vibe", "nudes"]
+        matched = [t for t in review_terms if t in server_name or t in description]
+        if matched:
+            preview = ", ".join(sorted(set(matched))[:4])
+            signals.append(RiskSignal(
+                "server_name_or_bio_review_lead",
+                "The public server name or description contains terms sometimes "
+                f"associated with inappropriate spaces ({preview}) and should be "
+                "reviewed by an analyst. This is a lead for human review, not a "
+                "determination.",
+                0.4))
+
+        # An unverified server that nonetheless carries an age-gated feature is a
+        # mild context signal: age-gating exists but Discord's own verification
+        # floor does not. Surfaced low because the combination is context, not
+        # proof of anything.
+        verification_level = raw.get("verification_level")
+        if isinstance(verification_level, int) and verification_level == 0:
+            if "invite_splash" in features or any("nsfw" in f for f in features):
+                signals.append(RiskSignal(
+                    "low_verification_public_server",
+                    "The server publishes public features while sitting at the "
+                    "lowest verification level, worth an analyst's context.",
+                    0.2))
+
+        # A very small but highly active server, or a resolvable invite that an
+        # analyst is pivoting from, is useful correlation context. A large
+        # presence relative to membership is surfaced as low-weight context.
+        members = raw.get("approximate_member_count")
+        presence = raw.get("approximate_presence_count")
+        if isinstance(members, int) and isinstance(presence, int) and members > 0:
+            if members <= 50 and presence >= max(10, int(members * 0.6)):
+                signals.append(RiskSignal(
+                    "small_high_activity_server",
+                    "A small server with unusually high concurrent presence, "
+                    "useful context when weighed against how the invite surfaced.",
+                    0.2))
+
+        # If the collector could not resolve anything public, that is not a risk
+        # signal, and no signal is emitted. Absence of data is not a lead.
+        return signals
 
 
 class PluginRegistry:

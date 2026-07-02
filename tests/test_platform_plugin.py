@@ -102,8 +102,9 @@ class TestRegistry:
         reg = default_registry()
         caps = reg.capabilities()
         assert "roblox" in caps and "discord" in caps
-        # Discord is always unavailable until M8 implements it.
-        assert caps["discord"] is False
+        # Discord is now implemented as a public-signal plugin and reports
+        # available whenever its collector module is importable.
+        assert caps["discord"] is True
 
     def test_register_custom_plugin(self):
         class FakePlugin(PlatformPlugin):
@@ -114,16 +115,23 @@ class TestRegistry:
         assert "fakebook" in reg.platforms()
 
 
-class TestDiscordStub:
-    def test_discord_unavailable(self):
-        assert DiscordPlugin().is_available() is False
+class TestDiscordPluginContract:
+    def test_discord_available(self):
+        # Discord is now a real public-signal plugin; it is available whenever
+        # its collector module imports.
+        assert DiscordPlugin().is_available() is True
 
     def test_discord_profile_well_formed(self):
+        # An unresolvable reference (no network needed) still yields a canonical,
+        # validated profile with a signals list and no fabricated data.
         dc = DiscordPlugin()
-        p = asyncio.run(dc.profile_for("someone"))
+        p = asyncio.run(dc.profile_for("not a resolvable reference xyz"))
         non_signal = {k: v for k, v in p.items() if k != "signals"}
         assert set(non_signal.keys()) == NORMALIZED_KEYS
+        assert isinstance(p["signals"], list)
+        # Nothing public resolved, so there are no leads.
         assert p["signals"] == []
+        assert p["flags"].get("resolved") is False
 
 
 class TestMalformedSafety:

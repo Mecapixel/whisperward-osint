@@ -55,7 +55,7 @@ WhisperWard is a **public-signal threat-hunting and case-preparation tool** for 
 ## Next
 
 - [x] Wire the correlation engine into the CLI pipeline as a first-class `correlate` command — complete, July 2026
-- [ ] Discord public OSINT module implementing the existing plugin contract (widget API + manual assist only)
+- [x] Discord public OSINT module implementing the existing plugin contract (invite + widget, tokenless) — complete, July 2026
 - [ ] Additional platform modules via `platform_plugin.py` (public data only)
 - [ ] Demo video / walkthrough (synthetic data only)
 - [ ] PhotoDNA / NCMEC adapter activation, pending external authorization

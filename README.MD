@@ -27,7 +27,7 @@ This project demonstrates production-grade skills directly transferable to ICAC-
 
 - Built a complete end-to-end investigative pipeline from raw public data to triaged, human-reviewable, court-defensible intelligence
 - **Defensive and forensic depth:** tamper-evident hash-chained chain of custody, cryptographically signed PDF case reports, PII redaction that never touches the sealed original, a 90-day retention enforcer, and a strict human-in-the-loop mandate on every escalation
-- **Production engineering:** 411 passing tests, structured logging, token-bucket rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
+- **Production engineering:** 424 passing tests, structured logging, token-bucket rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
 - **Responsible AI:** local-only analysis with explainable, decomposable risk scoring — no investigative data ever leaves the machine
 - **Full-stack delivery:** Python backend, a JSON API layer, and a D3-driven web dashboard with live data
 - **Governance first:** documented ethical boundaries, bias and fairness testing, and a calibrated tiered review workflow — see [`POLICY_BOUNDARY.md`](POLICY_BOUNDARY.md) and [`ethical_governance.md`](ethical_governance.md)
@@ -133,16 +133,17 @@ The dashboard asks for an operator name at sign-in. This is deliberately lightwe
 - Live Roblox avatar rendering in the subject dossier
 
 **Engineering**
-- 411 passing pytest tests, structured logging, rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
+- 424 passing pytest tests, structured logging, rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
 
 **Correlation and enrichment**
 - Cross-platform correlation engine fusing five rarity-weighted signals — username (RapidFuzz), stylometry, activity timing, shared network, and perceptual avatar hashing — with NetworkX identity clustering, contradiction checking, and per-signal rationale with a first-class CLI `correlate` command that seals its full result into the evidence store
 - IP enrichment and anonymization (Tor / VPN / hosting) detection, fully offline by design — no investigated address is ever transmitted to a third party
 - Roblox investigation enrichment built on the plugin architecture, feeding review-only leads to the risk engine
+- Discord public OSINT module (invite and widget intelligence, tokenless and public-data-only) implementing the same plugin contract
 - CSAM hash detection module — architecture complete and tested, approval-gated and disabled by default pending external authorization (hash and metadata only, never image content)
 
 ### In active development
-- Discord public OSINT module implementing the existing plugin contract
+- Additional platform modules via the plugin contract (public data only)
 
 ---
 
