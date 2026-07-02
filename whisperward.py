@@ -251,6 +251,131 @@ def status(case_id: str = typer.Option(..., "--case", help="Case ID")):
     console.print(f"Artifacts: {summary['artifacts_count']}")
 
 
+def _build_correlation_profiles(case_id: str, database) -> list:
+    """Build CorrelationProfile objects for every target in a case, using only
+    artifacts a scan has already persisted. Nothing new is collected here: the
+    correlate step reasons over the case file as it stands. Missing fields
+    degrade to neutral values and simply lower signal confidence, which the
+    engine already accounts for."""
+    import json as _json
+    from correlation_engine import CorrelationProfile
+
+    profiles = []
+    conn = database.get_connection()
+    for target in database.get_case_targets(case_id):
+        target_id = target["target_id"]
+        username = target["username"]
+        platform = (target["platform"] or "unknown").lower()
+
+        messages: list = []
+        avatar_phash = None
+        avatar_dhash = None
+
+        cur = conn.execute(
+            "SELECT module_name, raw_data FROM artifacts WHERE target_id = ?",
+            (target_id,),
+        )
+        for row in cur.fetchall():
+            try:
+                data = _json.loads(row["raw_data"])
+            except (ValueError, TypeError):
+                continue
+            if not isinstance(data, dict):
+                continue
+            if row["module_name"] == "RobloxOSINT":
+                description = (data.get("description") or "").strip()
+                if description:
+                    messages.append(description)
+                avatar_phash = data.get("avatar_phash") or avatar_phash
+                avatar_dhash = data.get("avatar_dhash") or avatar_dhash
+
+        profiles.append(CorrelationProfile(
+            profile_id=f"{platform}:{username}",
+            platform=platform,
+            username=username,
+            messages=messages,
+            avatar_phash=avatar_phash,
+            avatar_dhash=avatar_dhash,
+        ))
+    return profiles
+
+
+@app.command()
+def correlate(
+    case_id: str = typer.Option(..., "--case", help="Case ID"),
+    semantic: bool = typer.Option(
+        False, "--semantic",
+        help="Enable semantic stylometry (downloads a local embedding model on first use)",
+    ),
+):
+    """Run cross-platform identity correlation across all targets in a case.
+
+    Produces pairwise correlation leads with per-signal evidence and clusters
+    targets into likely-identity groups. Results are leads for a human analyst,
+    never determinations, and the full result is sealed into the evidence
+    store as an artifact."""
+    from correlation_engine import CorrelationEngine
+
+    targets = db.get_case_targets(case_id)
+    if len(targets) < 2:
+        console.print("[yellow]Correlation needs at least two targets in the case.[/yellow]")
+        return
+
+    console.print(f"[cyan]🔗 Correlating {len(targets)} targets in {case_id}...[/cyan]")
+    profiles = _build_correlation_profiles(case_id, db)
+    engine = CorrelationEngine(use_semantic=semantic)
+
+    # Pairwise detail for the analyst
+    from rich.table import Table
+    table = Table(title="Pairwise Correlation", show_lines=False)
+    table.add_column("Pair", style="cyan", overflow="fold")
+    table.add_column("Strength", justify="right")
+    table.add_column("Lead", justify="center")
+    table.add_column("Top evidence", overflow="fold")
+
+    pair_results = []
+    for i in range(len(profiles)):
+        for j in range(i + 1, len(profiles)):
+            result = engine.correlate(profiles[i], profiles[j])
+            pair_results.append(result)
+            top_signal = max(result.signals, key=lambda s: s.raw_score * s.confidence)
+            table.add_row(
+                f"{result.profile_a} ↔ {result.profile_b}",
+                f"{result.correlation_strength:.2f}",
+                "[bold red]YES[/bold red]" if result.is_lead else "no",
+                top_signal.rationale,
+            )
+    console.print(table)
+
+    # Identity groups across the whole case
+    cluster = engine.cluster_identities(profiles)
+    console.print("\n[bold cyan]Identity groups:[/bold cyan]")
+    for idx, group in enumerate(cluster.groups, start=1):
+        members = ", ".join(sorted(group))
+        label = "[bold red]linked[/bold red]" if len(group) > 1 else "standalone"
+        console.print(f"  Group {idx} ({label}): {members}")
+
+    # Seal the full result into the evidence store on the case's first target
+    payload = {
+        "case_id": case_id,
+        "pairwise": [r.to_dict() for r in pair_results],
+        "cluster": cluster.to_dict(),
+        "semantic_enabled": semantic,
+    }
+    artifact_id = db.save_artifact(
+        target_id=targets[0]["target_id"],
+        module_name="CorrelationEngine",
+        artifact_type="identity_correlation",
+        raw_data=payload,
+    )
+    console.print(f"\n[green]✅ Correlation sealed as artifact {artifact_id}[/green]")
+    console.print(
+        "[dim]These are correlation leads with supporting evidence, not assertions "
+        "of shared identity. A qualified human analyst must confirm any identity "
+        "link before action.[/dim]"
+    )
+
+
 @app.command()
 def run(
     case_id: str = typer.Option(..., "--case", help="Case ID"),

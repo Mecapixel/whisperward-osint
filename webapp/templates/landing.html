@@ -56,7 +56,7 @@
     <form class="login-form" method="POST" action="/auth">
       <div class="input-row">
         <label class="input-label" for="op-id">OPERATOR</label>
-        <input class="terminal-input" id="op-id" name="operator" type="text" placeholder="OPERATOR ID" autocomplete="off" required>
+        <input class="terminal-input" id="op-id" name="operator" type="text" value="MECAPIXEL" autocomplete="off" required>
       </div>
       <div class="input-row">
         <label class="input-label" for="op-key">AUTH KEY</label>
@@ -79,11 +79,11 @@
 </div>
 
 <script>
-  document.querySelector('.login-form').addEventListener('submit', (e) => {
-    e.preventDefault();
+  document.querySelector('.login-form').addEventListener('submit', () => {
+    // Show the verifying state, then let the form submit normally to /auth.
+    // /auth sets the signed session cookie and redirects to the dashboard.
     const btn = document.querySelector('.auth-btn');
     btn.textContent = '[ VERIFYING... ]';
-    setTimeout(() => { window.location.href = '/dashboard'; }, 800);
   });
 </script>
 

@@ -175,7 +175,7 @@ async def landing(request: Request):
 
 
 @app.post("/auth")
-async def auth(operator: str = Form(...), auth_key: str = Form(...)):
+async def auth(operator: str = Form(...), auth_key: str = Form("")):
     response = RedirectResponse(url="/dashboard", status_code=303)
     response.set_cookie(
         key=_SESSION_COOKIE,
