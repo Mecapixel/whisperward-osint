@@ -74,5 +74,9 @@ class RAGEngine:
                 limit=limit
             )
             return results.get("documents", [])
-        except:
+        except Exception as exc:
+            # The vector store may be empty, uninitialized, or unavailable on a
+            # constrained host. Case context is optional, so return nothing and
+            # let the caller proceed rather than failing the analysis.
+            print(f"    [rag_engine] case context unavailable: {exc}")
             return []

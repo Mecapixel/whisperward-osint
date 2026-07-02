@@ -32,6 +32,9 @@ class SherlockIntegration(BaseOSINTModule):
                 return
 
             try:
+                # Safe subprocess usage: arguments are passed as a list (never a
+                # shell string) and shell=True is not used, so the username cannot
+                # be interpreted by a shell. Verified during code review.
                 result = subprocess.run([
                     "python", str(sherlock_script),
                     username,
@@ -68,6 +71,8 @@ class SherlockIntegration(BaseOSINTModule):
                 try:
                     site = line.split("[+] ")[1].split(":")[0].strip()
                     found.append(site)
-                except:
-                    pass
+                except (IndexError, AttributeError):
+                    # A malformed output line is skipped rather than aborting the
+                    # parse of the remaining lines.
+                    continue
         return found

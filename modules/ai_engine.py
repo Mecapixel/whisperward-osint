@@ -23,8 +23,11 @@ class AIEngine:
                 )
                 if rag_results and rag_results.get('documents'):
                     context = "\n\nRelevant Context:\n" + "\n".join(rag_results['documents'][0][:3])
-            except:
-                pass
+            except (KeyError, IndexError, TypeError, AttributeError) as exc:
+                # RAG context is optional enrichment; a missing collection or an
+                # unexpected result shape must not stop the analysis. Continue
+                # without context rather than failing the case.
+                print(f"    [ai_engine] RAG context unavailable, continuing without it: {exc}")
 
         system_prompt = """
         You are an expert online safety analyst.
@@ -47,7 +50,10 @@ class AIEngine:
                 result_text = response['message']['content']
                 try:
                     findings = json.loads(result_text)
-                except:
+                except (json.JSONDecodeError, ValueError):
+                    # The model did not return valid JSON. Fall back to a plain
+                    # summary of the response text rather than raising, so a
+                    # malformed model reply degrades to a usable finding.
                     findings = {"summary": result_text[:400]}
 
                 return {

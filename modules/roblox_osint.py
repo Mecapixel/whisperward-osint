@@ -93,7 +93,10 @@ class RobloxOSINT(BaseOSINTModule):
                 "created": data.get("created"),
                 "isBanned": data.get("isBanned", False)
             }
-        except:
+        except (KeyError, TypeError, AttributeError) as exc:
+            # A hidden profile or an unexpected payload shape yields no info
+            # rather than an error, so a single bad response cannot fail a scan.
+            print(f"    [roblox] user info unavailable: {exc}")
             return {}
 
     async def _get_thumbnail(self, user_id: int):
@@ -102,8 +105,10 @@ class RobloxOSINT(BaseOSINTModule):
             data = await self.safe_fetch(url)
             if data.get("data"):
                 return data["data"][0].get("imageUrl")
-        except:
-            pass
+        except (KeyError, IndexError, TypeError, AttributeError) as exc:
+            # The thumbnail endpoint rate-limits and can return an unexpected
+            # shape; a missing avatar is not fatal to the scan.
+            print(f"    [roblox] thumbnail unavailable: {exc}")
         return None
 
     async def _get_friends(self, user_id: int):

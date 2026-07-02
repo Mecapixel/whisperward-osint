@@ -1,13 +1,13 @@
 # WhisperWard OSINT
 
-**AI-Assisted Defensive OSINT Toolkit for Online Child Safety Investigations**
+**An explainable digital investigations platform for Trust & Safety and child-protection investigations.**
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
 ![Tests](https://github.com/Mecapixel/whisperward-osint/actions/workflows/tests.yml/badge.svg)
 ![Status](https://img.shields.io/badge/status-active%20development-success)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 
-A modular, local-first platform that helps authorized investigators triage public signals of predatory behavior targeting minors on platforms like Roblox and Discord. It processes only publicly accessible data, runs AI analysis entirely on the local machine, and requires human review before any escalation.
+WhisperWard combines public-data collection, behavioral analysis, cross-platform identity correlation, and transparent, explainable risk scoring — while preserving human decision-making at every escalation. It is modular and local-first: it processes only publicly accessible data, runs AI analysis entirely on the local machine, and requires human review before any escalation.
 
 Built by **Meca Dismukes (Pixora Inc.)** as both an active investigative tool and a portfolio project for ICAC-aligned and Trust & Safety work.
 
