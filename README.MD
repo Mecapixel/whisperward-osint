@@ -1,15 +1,17 @@
 # WhisperWard OSINT
 
-**AI-Powered Defensive OSINT Toolkit for Online Child Safety Investigations**
+**AI-Assisted Defensive OSINT Toolkit for Online Child Safety Investigations**
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
-![Tests](https://img.shields.io/badge/tests-408%20passing-brightgreen)
+![Tests](https://github.com/Mecapixel/whisperward-osint/actions/workflows/tests.yml/badge.svg)
 ![Status](https://img.shields.io/badge/status-active%20development-success)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 
 A modular, local-first platform that helps authorized investigators triage public signals of predatory behavior targeting minors on platforms like Roblox and Discord. It processes only publicly accessible data, runs AI analysis entirely on the local machine, and requires human review before any escalation.
 
 Built by **Meca Dismukes (Pixora Inc.)** as both an active investigative tool and a portfolio project for ICAC-aligned and Trust & Safety work.
+
+**Live demo:** [whisperward-osint.onrender.com](https://whisperward-osint.onrender.com) — seeded with clearly labeled synthetic cases. Hosted on a free tier, so the first visit after idle takes about thirty to sixty seconds to spin up.
 
 ---
 
@@ -57,7 +59,9 @@ python webapp/main.py
 # then open http://localhost:8003
 ```
 
-The full collection and analysis pipeline (live OSINT, local AI) requires the additional setup in [Installation](#installation) below.
+The dashboard runs with no AI dependencies and seeds synthetic demo cases automatically when the database is empty. The full collection and analysis pipeline (live OSINT, local AI) requires the Ollama runtime and the additional setup in [Installation](#installation) below.
+
+The dashboard asks for an operator name at sign-in. This is deliberately lightweight: whoever runs the tool becomes the operator, the signed session cookie exists to prevent tampering rather than to gatekeep credentials, and the authoritative operator record lives in the tamper-evident chain-of-custody log. To keep sessions valid across host restarts, optionally set `WHISPERWARD_SESSION_SECRET` in the environment; otherwise a secret is generated and persisted locally on first run.
 
 ---
 

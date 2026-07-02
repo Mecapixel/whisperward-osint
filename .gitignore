@@ -1,5 +1,8 @@
 # WhisperWard OSINT - .gitignore
 
+# Session signing secret (generated at first run, never commit)
+.ww_session_secret
+
 # Database files
 whisperward.db
 *.db

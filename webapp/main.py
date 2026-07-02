@@ -50,7 +50,39 @@ app.include_router(api_router)
 # interface, not credential verification — the authoritative operator record
 # lives in the chain-of-custody log.
 
-_SESSION_SECRET = (os.getenv("WHISPERWARD_SESSION_SECRET") or secrets.token_hex(32)).encode()
+def _load_session_secret() -> bytes:
+    """Return a stable session-signing secret.
+
+    Priority: the WHISPERWARD_SESSION_SECRET environment variable if set;
+    otherwise a secret persisted to a local file beside the database, created
+    on first run with owner-only permissions. The file keeps sessions valid
+    across process restarts — including the dev reloader, which restarts the
+    app on every file save, and platform restarts on hosts like Render — so
+    operators are not silently logged out mid-session. Only if the file cannot
+    be read or written does this fall back to a per-process secret, which
+    still functions but requires re-authentication after a restart.
+    """
+    env = os.getenv("WHISPERWARD_SESSION_SECRET")
+    if env:
+        return env.encode()
+    secret_path = os.path.join(os.getcwd(), ".ww_session_secret")
+    try:
+        if os.path.exists(secret_path):
+            with open(secret_path, "r") as fh:
+                stored = fh.read().strip()
+            if stored:
+                return stored.encode()
+        generated = secrets.token_hex(32)
+        fd = os.open(secret_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as fh:
+            fh.write(generated)
+        return generated.encode()
+    except OSError as exc:
+        print(f"[session] could not persist secret ({exc}); using per-process secret")
+        return secrets.token_hex(32).encode()
+
+
+_SESSION_SECRET = _load_session_secret()
 _SESSION_COOKIE = "ww_session"
 
 
