@@ -29,11 +29,14 @@ from datetime import datetime, timedelta, timezone
 
 SYNTHETIC_LABEL = "[SYNTHETIC GROOMING DEMO — FABRICATED, FOR TESTING ONLY]"
 
-# Served from the webapp's own static directory. The previous value was a
-# Roblox CDN headshot URL with a 30DAY- prefix; those asset URLs rotate, which
-# would eventually leave the public demo showing a broken image. A vendored
-# placeholder cannot expire and reinforces that the subject is fabricated.
-SYNTHETIC_AVATAR_URL = "/static/synthetic_avatar.svg"
+# The Roblox headshot CDN URL used for the synthetic demo subjects, restored to
+# match the original demo appearance. The case_detail template has an onerror
+# fallback to the local placeholder, so if this rotating CDN URL ever expires the
+# dossier degrades to the vendored graphic rather than a broken image.
+SYNTHETIC_AVATAR_URL = (
+    "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-"
+    "44F0F82C4F2991A2E9BBC686FC599724-Png/420/420/AvatarHeadshot/Png/noFilter"
+)
 
 
 def _iso_days_ago(days: int) -> str:
