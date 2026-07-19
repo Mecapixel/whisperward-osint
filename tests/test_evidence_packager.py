@@ -18,8 +18,8 @@ import zipfile
 
 import pytest
 
-from modules.evidence_packager import create_evidence_package, verify_evidence_package
-from modules.case_log import ChainOfCustodyLog
+from core.evidence_packager import create_evidence_package, verify_evidence_package
+from core.case_log import ChainOfCustodyLog
 
 
 def build_case_db(directory):

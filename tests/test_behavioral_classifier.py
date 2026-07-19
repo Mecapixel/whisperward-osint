@@ -1,6 +1,6 @@
 import json
 import pytest
-from behavioral_classifier import (
+from modules.child_safety.behavioral_classifier import (
     ClassifierResult,
     GroomingClassifier,
     PatternCategory,

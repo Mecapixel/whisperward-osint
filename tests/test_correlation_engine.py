@@ -11,7 +11,7 @@ A separate test confirms the engine still runs when semantic is requested.
 import json
 import pytest
 
-from correlation_engine import (
+from core.correlation_engine import (
     CorrelationEngine,
     CorrelationProfile,
     handle_rarity,
@@ -279,7 +279,7 @@ class TestPairwiseCorrelation:
         assert username_signal.raw_score < 0.5
 
     def test_default_avatar_excluded(self):
-        from correlation_engine import DEFAULT_AVATAR_HASHES
+        from core.correlation_engine import DEFAULT_AVATAR_HASHES
         DEFAULT_AVATAR_HASHES.add("deadbeefdeadbeef")
         engine = CorrelationEngine(use_semantic=False)
         p1 = CorrelationProfile("Y1", "roblox", "userone", avatar_phash="deadbeefdeadbeef")

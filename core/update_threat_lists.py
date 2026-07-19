@@ -294,7 +294,7 @@ def validate_authority_file(data_dir: str) -> dict:
                             + ". This is acceptable, the enricher degrades gracefully without it.")
         return result
     try:
-        from ip_enrichment import validate_asn_set
+        from core.ip_enrichment import validate_asn_set
     except Exception as exc:
         result["detail"] = "Could not import the validator from ip_enrichment: " + str(exc)
         return result

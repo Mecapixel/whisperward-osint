@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import Optional
 
 try:
-    from .case_log import ChainOfCustodyLog
+    from core.case_log import ChainOfCustodyLog
     _CASE_LOG_AVAILABLE = True
 except Exception:
     try:
@@ -54,7 +54,7 @@ except Exception:
         _CASE_LOG_AVAILABLE = False
 
 try:
-    from .redaction_engine import redact_case
+    from core.redaction_engine import redact_case
     _REDACTION_AVAILABLE = True
 except Exception:
     try:
@@ -318,7 +318,7 @@ def _redact_referral(connection: sqlite3.Connection, case_id: str,
     import uses the same relative then flat pattern as the rest of the module so it
     works however the package is run."""
     try:
-        from .redaction_engine import (_redact_value, RedactionResult, POLICIES,
+        from core.redaction_engine import (_redact_value, RedactionResult, POLICIES,
                                         _gather_protected_values)
     except Exception:
         from redaction_engine import (_redact_value, RedactionResult, POLICIES,

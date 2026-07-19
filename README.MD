@@ -161,22 +161,27 @@ Bias and fairness audits run on each major release. Any demographic proxy group 
 
 ## Architecture
 
-WhisperWard is a modular pipeline. Each platform collector inherits from a shared base class and is exposed through a normalized plugin contract, feeds a central evidence store, and is scored by a weighted, explainable risk engine before reaching any human-facing output. AI analysis runs entirely locally. Every step logs its actions for auditability, and evidence is sealed under a tamper-evident hash chain.
+WhisperWard separates a reusable investigation core from the specializations built on top of it. The core owns evidence integrity, chain of custody, correlation, explainable risk scoring, redaction, retention, and reporting. A specialization declares its collectors, classifiers, and behavioral indicators to the core through a registration seam (`core/registry.py`) against stable contracts (`core/contracts.py`); the core never imports a specialization. Child safety is the first specialization. AI analysis runs entirely locally, every step logs its actions for auditability, and evidence is sealed under a tamper-evident hash chain.
 
 ```
-CLI / Dashboard
-      |
-Platform Plugins  (Roblox live, Discord contract)
-      |
-OSINT Collectors  (Roblox, Sherlock)
-      |
-Evidence Store  (SQLite + SHA-256 chain of custody)
-      |
-Local AI + RAG  (Ollama + ChromaDB)
-      |
-Risk Engine  (weighted, explainable scoring)
-      |
-Human Review + Signed Export  (PDF report, NCMEC-aligned referral, redaction, retention)
+                      CLI / Dashboard
+                            |
+        +-------------------+-------------------+
+        |            WhisperWard Core           |
+        |  contracts · registry · plugin base   |
+        |  correlation engine · risk engine     |
+        |  evidence store (SQLite + SHA-256     |
+        |  chain of custody) · redaction ·      |
+        |  retention · signed reporting         |
+        +-------------------+-------------------+
+                            |
+              modules/child_safety  (first specialization)
+              collectors (Roblox live, Discord contract, Sherlock)
+              grooming classifier · CSAM hash-and-refer
+              local AI + RAG (Ollama + ChromaDB)
+              NCMEC-aligned referral export
+                            |
+              Human Review + Signed Export
 ```
 
 ---

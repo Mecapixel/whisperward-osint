@@ -10,11 +10,11 @@ import json
 
 import pytest
 
-from precision_recall_reporter import (
+from modules.child_safety.eval.precision_recall_reporter import (
     EvaluationResult,
     PrecisionRecallReporter,
 )
-from synthetic_profile_generator import SyntheticProfileGenerator
+from modules.child_safety.eval.synthetic_profile_generator import SyntheticProfileGenerator
 
 
 # Detector stubs for testing

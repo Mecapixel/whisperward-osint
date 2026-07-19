@@ -20,7 +20,7 @@ import tempfile
 
 import pytest
 
-from modules.report_generator import (generate_signed_report,
+from core.report_generator import (generate_signed_report,
                                        ensure_signing_identity,
                                        _fetch_case_data, _tier_for_score,
                                        DEFAULT_CERT_DIR, CERT_FILE)
@@ -68,7 +68,7 @@ def seed_case(directory):
                      "file_path, sha256) VALUES (1,?,?,?,'h')", (module, atype, path))
     conn.commit()
 
-    from modules.case_log import ChainOfCustodyLog
+    from core.case_log import ChainOfCustodyLog
     log = ChainOfCustodyLog(connection=conn)
     log.append(action="case_created", case_id="CASE-T1", analyst="Meca")
     log.append(action="artifact_collected", case_id="CASE-T1", analyst="Meca")
@@ -147,7 +147,7 @@ class TestSignature:
 
 class TestChainEntry:
     def test_report_writes_chain_entry(self, env):
-        from modules.case_log import ChainOfCustodyLog
+        from core.case_log import ChainOfCustodyLog
         generate_signed_report("CASE-T1", output_dir=os.path.join(env["dir"], "reports"),
                                connection=env["conn"], analyst="Meca")
         log = ChainOfCustodyLog(connection=env["conn"])
@@ -155,7 +155,7 @@ class TestChainEntry:
         assert "report_signed" in actions
 
     def test_chain_intact_after_report(self, env):
-        from modules.case_log import ChainOfCustodyLog
+        from core.case_log import ChainOfCustodyLog
         generate_signed_report("CASE-T1", output_dir=os.path.join(env["dir"], "reports"),
                                connection=env["conn"])
         log = ChainOfCustodyLog(connection=env["conn"])
@@ -171,7 +171,7 @@ class TestPackageSync:
         assert os.path.exists(pkg)
 
     def test_package_event_in_chain_when_synced(self, env):
-        from modules.case_log import ChainOfCustodyLog
+        from core.case_log import ChainOfCustodyLog
         generate_signed_report("CASE-T1", output_dir=os.path.join(env["dir"], "reports"),
                                connection=env["conn"], create_package=True,
                                export_dir=env["exports"])

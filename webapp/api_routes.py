@@ -34,7 +34,7 @@ except Exception:  # pragma: no cover - import shape depends on run context
     from ..database import DatabaseManager
 
 try:
-    from modules.platform_plugin import default_registry
+    from core.platform_plugin import default_registry
     _REGISTRY_AVAILABLE = True
 except Exception:  # pragma: no cover
     default_registry = None

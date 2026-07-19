@@ -2,8 +2,8 @@
 import aiohttp
 import asyncio
 from datetime import datetime
-from .base_module import BaseOSINTModule
-from .rate_limiter import api_limiter
+from core.base_module import BaseOSINTModule
+from core.rate_limiter import api_limiter
 
 class RobloxOSINT(BaseOSINTModule):
     def __init__(self):

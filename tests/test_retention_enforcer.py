@@ -18,9 +18,9 @@ from datetime import datetime, timezone, timedelta
 
 import pytest
 
-from modules.retention_enforcer import (enforce_retention, print_report,
+from core.retention_enforcer import (enforce_retention, print_report,
                                         _parse_timestamp, DEFAULT_RETENTION_DAYS)
-from modules.case_log import ChainOfCustodyLog
+from core.case_log import ChainOfCustodyLog
 
 
 def iso_days_ago(days):
@@ -147,7 +147,7 @@ class TestChainPreserved:
     def test_purge_aborts_if_chain_entry_fails(self, env, monkeypatch):
         # If the audit entry cannot be written, the purge must not delete the data,
         # because deletion without an audit record would be unprovable enforcement.
-        import modules.retention_enforcer as re_mod
+        import core.retention_enforcer as re_mod
 
         class BrokenLog:
             def __init__(self, *a, **k):

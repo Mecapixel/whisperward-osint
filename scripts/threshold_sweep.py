@@ -15,9 +15,9 @@ Run:
     python threshold_sweep.py
 """
 
-from risk_engine import RiskEngine
+from core.risk_engine import RiskEngine
 from run_real_evaluation import profile_to_signals
-from synthetic_profile_generator import SyntheticProfileGenerator
+from modules.child_safety.eval.synthetic_profile_generator import SyntheticProfileGenerator
 
 
 def evaluate_at_threshold(scores_and_labels, threshold: float) -> dict:

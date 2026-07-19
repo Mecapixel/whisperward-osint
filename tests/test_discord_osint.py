@@ -12,10 +12,10 @@ import asyncio
 
 import pytest
 
-from modules.discord_osint import (
+from modules.child_safety.collectors.discord_osint import (
     DiscordOSINT, _extract_invite_code, _shape_invite, _shape_widget,
 )
-from modules.platform_plugin import default_registry, NORMALIZED_KEYS
+from core.platform_plugin import default_registry, NORMALIZED_KEYS
 
 
 def run(coro):

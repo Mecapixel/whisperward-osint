@@ -55,7 +55,7 @@ def analyze_text(text: str, use_ai: bool = True, case_id: str = None, target_id:
 
     # Score the target with the structured RiskEngine via the bridge.
     try:
-        from .risk_scoring import score_target
+        from core.risk_scoring import score_target
         connection = db.get_connection()
         result = score_target(connection, target_id, ai_findings=ai_findings)
     except Exception as e:

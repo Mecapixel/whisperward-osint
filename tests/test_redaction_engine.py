@@ -23,10 +23,10 @@ import tempfile
 
 import pytest
 
-from modules.redaction_engine import (redact_case, _IPV6_RE, _IPV4_RE,
+from core.redaction_engine import (redact_case, _IPV6_RE, _IPV4_RE,
                                        _EMAIL_RE, _PHONE_RE, _SSN_RE,
                                        PII_PLACEHOLDER, MINOR_PLACEHOLDER)
-from modules.case_log import ChainOfCustodyLog
+from core.case_log import ChainOfCustodyLog
 
 
 def seed(directory, target_notes=None):

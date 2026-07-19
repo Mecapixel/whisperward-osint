@@ -24,7 +24,7 @@ import tempfile
 
 import pytest
 
-import update_threat_lists as u
+import core.update_threat_lists as u
 
 
 # Simulated fetchers. Each stands in for the real Tor download.

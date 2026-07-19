@@ -14,9 +14,9 @@ Run:
     python run_real_evaluation.py
 """
 
-from precision_recall_reporter import PrecisionRecallReporter
-from risk_engine import RiskEngine, RiskSignals
-from synthetic_profile_generator import (
+from modules.child_safety.eval.precision_recall_reporter import PrecisionRecallReporter
+from core.risk_engine import RiskEngine, RiskSignals
+from modules.child_safety.eval.synthetic_profile_generator import (
     SyntheticProfile,
     SyntheticProfileGenerator,
 )

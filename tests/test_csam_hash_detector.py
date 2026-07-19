@@ -27,7 +27,7 @@ import imagehash
 import pytest
 from PIL import Image
 
-from csam_hash_detector import (
+from modules.child_safety.csam_hash_detector import (
     CSAMHashDetector,
     HashCheckResult,
     LocalHashDatabase,

@@ -1,9 +1,9 @@
 # tests/test_whisperward.py
 import pytest
 from database import DatabaseManager
-from modules.utils import ensure_directories
-from modules.roblox_osint import RobloxOSINT
-from modules.sherlock_integration import SherlockIntegration
+from core.utils import ensure_directories
+from modules.child_safety.collectors.roblox_osint import RobloxOSINT
+from modules.child_safety.collectors.sherlock_integration import SherlockIntegration
 
 @pytest.fixture
 def db(tmp_path):

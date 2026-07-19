@@ -52,6 +52,13 @@ WhisperWard is a **public-signal threat-hunting and case-preparation tool** for 
 - [x] Public GitHub release with full documentation and case study
 
 ---
+### Platform Phase 1: Core Extraction — complete, July 2026
+- [x] Codebase split into `core/` (reusable investigation engine) and `modules/` (specializations); child-safety logic under `modules/child_safety/`
+- [x] Stable contracts defined in `core/contracts.py` (Decision, ClassifierVerdict, BehavioralClassifier, Evidence, Entity, Case, RiskSignal, Explanation)
+- [x] Registration seam in `core/registry.py`: a specialization declares its classifier and behavioral-indicator taxonomy without the core importing it
+- [x] Risk engine decoupled from the child-safety classifier (resolved through the registry; core carries no static import of any specialization)
+- [x] All 424 tests pass against the new layout with import-path updates only
+
 ## Next
 
 - [x] Wire the correlation engine into the CLI pipeline as a first-class `correlate` command — complete, July 2026

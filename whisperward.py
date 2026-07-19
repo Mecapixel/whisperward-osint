@@ -11,24 +11,22 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from typing import Optional
 
 from database import DatabaseManager
-from modules import (
-    RobloxOSINT,
-    DiscordOSINT,
-    SherlockIntegration,
-    analyze_text,
-    create_evidence_package,
-    generate_identity_graph,
-    ensure_directories,
-)
+from modules.child_safety.collectors.roblox_osint import RobloxOSINT
+from modules.child_safety.collectors.discord_osint import DiscordOSINT
+from modules.child_safety.collectors.sherlock_integration import SherlockIntegration
+from modules.child_safety.behavioral import analyze_text
+from core.evidence_packager import create_evidence_package
+from core.graph_visualizer import generate_identity_graph
+from core.utils import ensure_directories
 
 # M5 evidence-lifecycle features. Imported directly from their submodules because
 # they are not re-exported from modules/__init__.py.
-from modules.report_generator import generate_signed_report
-from modules.redaction_engine import redact_case
-from modules.referral_export import export_referral
-from modules.retention_enforcer import enforce_retention
+from core.report_generator import generate_signed_report
+from core.redaction_engine import redact_case
+from modules.child_safety.referral_export import export_referral
+from core.retention_enforcer import enforce_retention
 # M7 CSAM hash detection. Lives at repo root, not under modules/.
-from csam_hash_detector import CSAMHashDetector
+from modules.child_safety.csam_hash_detector import CSAMHashDetector
 
 app = typer.Typer(help="WhisperWard OSINT - Defensive Online Safety Toolkit")
 console = Console()
@@ -258,7 +256,7 @@ def _build_correlation_profiles(case_id: str, database) -> list:
     degrade to neutral values and simply lower signal confidence, which the
     engine already accounts for."""
     import json as _json
-    from correlation_engine import CorrelationProfile
+    from core.correlation_engine import CorrelationProfile
 
     profiles = []
     conn = database.get_connection()
@@ -314,7 +312,7 @@ def correlate(
     targets into likely-identity groups. Results are leads for a human analyst,
     never determinations, and the full result is sealed into the evidence
     store as an artifact."""
-    from correlation_engine import CorrelationEngine
+    from core.correlation_engine import CorrelationEngine
 
     targets = db.get_case_targets(case_id)
     if len(targets) < 2:

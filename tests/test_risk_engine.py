@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from risk_engine import (
+from core.risk_engine import (
     RiskEngine,
     RiskSignals,
     RiskResult,

@@ -25,8 +25,8 @@ from types import SimpleNamespace
 
 import pytest
 
-import ip_enrichment as module
-from ip_enrichment import (
+import core.ip_enrichment as module
+from core.ip_enrichment import (
     IPEnricher,
     EnrichmentConfig,
     NetworkInfo,

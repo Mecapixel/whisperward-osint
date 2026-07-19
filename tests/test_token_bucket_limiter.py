@@ -11,7 +11,7 @@ import pybreaker
 import pytest
 from requests.exceptions import HTTPError
 
-from token_bucket_limiter import (
+from core.token_bucket_limiter import (
     PLATFORM_CONFIGS,
     PlatformConfig,
     RateLimiter,

@@ -16,11 +16,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 # Import the modules under test
-from modules.base_module import BaseOSINTModule
-from modules.behavioral import analyze_text
-from modules.evidence_packager import create_evidence_package
-from modules.roblox_osint import RobloxOSINT
-from modules.sherlock_integration import SherlockIntegration
+from core.base_module import BaseOSINTModule
+from modules.child_safety.behavioral import analyze_text
+from core.evidence_packager import create_evidence_package
+from modules.child_safety.collectors.roblox_osint import RobloxOSINT
+from modules.child_safety.collectors.sherlock_integration import SherlockIntegration
 
 
 # ─────────────────────────────────────────────
@@ -128,7 +128,7 @@ class TestBehavioral:
         assert result["risk_score"] == 0.0
 
     def test_analyze_text_ai_failure_fallback(self):
-        with patch("modules.behavioral.AIEngine") as mock_ai_class:
+        with patch('modules.child_safety.behavioral.AIEngine') as mock_ai_class:
             mock_ai_class.side_effect = Exception("Ollama not running")
             result = analyze_text("synthetic test content", use_ai=True)
             assert isinstance(result, dict)

@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from behavioral_classifier import ClassifierResult, Decision, GroomingClassifier
+from core.contracts import Decision
+from core.registry import get_classifier
+
+if TYPE_CHECKING:
+    from modules.child_safety.behavioral_classifier import ClassifierResult
 
 
 class Tier(int, Enum):
@@ -107,11 +113,15 @@ class RiskEngine:
     }
 
     def __init__(self):
-        self._classifier = GroomingClassifier()
+        # Resolved through the core registry on first use. The core never
+        # imports a specialization; see core/registry.py.
+        self._classifier = None
 
     def score(self, signals: RiskSignals) -> RiskResult:
         classifier_result = signals.classifier_result
         if classifier_result is None and signals.chat_messages:
+            if self._classifier is None:
+                self._classifier = get_classifier()
             classifier_result = self._classifier.classify_profile(
                 chat_messages=signals.chat_messages,
                 account_age_days=signals.account_age_days,

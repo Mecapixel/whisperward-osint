@@ -1,9 +1,9 @@
 # modules/sherlock_integration.py
 import subprocess
 from pathlib import Path
-from .base_module import BaseOSINTModule
-from .utils import ensure_directories
-from .rate_limiter import api_limiter
+from core.base_module import BaseOSINTModule
+from core.utils import ensure_directories
+from core.rate_limiter import api_limiter
 
 class SherlockIntegration(BaseOSINTModule):
     def __init__(self):

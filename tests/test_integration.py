@@ -15,8 +15,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from database.db_manager import DatabaseManager
-from modules.behavioral import analyze_text
-from modules.evidence_packager import create_evidence_package
+from modules.child_safety.behavioral import analyze_text
+from core.evidence_packager import create_evidence_package
 
 
 @pytest.fixture
@@ -101,7 +101,7 @@ class TestFullPipeline:
             },
         )
 
-        with patch("modules.behavioral.AIEngine") as mock_ai_class:
+        with patch('modules.child_safety.behavioral.AIEngine') as mock_ai_class:
             mock_ai = MagicMock()
             mock_ai.analyze_behavior.return_value = {
                 "analysis_type": "ai_rag_behavioral",
@@ -132,7 +132,7 @@ class TestFullPipeline:
 
     @pytest.mark.asyncio
     async def test_roblox_collect_integrates_with_db(self, test_db):
-        from modules.roblox_osint import RobloxOSINT
+        from modules.child_safety.collectors.roblox_osint import RobloxOSINT
 
         case_id = test_db.create_case("Synthetic Roblox Integration Test")
         test_db.add_target(case_id, "roblox", "synthetic_roblox_user_001")

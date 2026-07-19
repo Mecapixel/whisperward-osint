@@ -45,7 +45,7 @@ from typing import Optional
 
 # RiskEngine and the classifier live at the repository root, not under modules/.
 try:
-    from risk_engine import RiskEngine, RiskSignals
+    from core.risk_engine import RiskEngine, RiskSignals
 except Exception:  # pragma: no cover - import shim for alternate layouts
     from ..risk_engine import RiskEngine, RiskSignals  # type: ignore
 

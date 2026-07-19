@@ -155,11 +155,11 @@ class RobloxPlugin(PlatformPlugin):
     def __init__(self):
         self._module = None
         try:
-            from .roblox_osint import RobloxOSINT
+            from modules.child_safety.collectors.roblox_osint import RobloxOSINT
             self._module_cls = RobloxOSINT
         except Exception:
             try:
-                from modules.roblox_osint import RobloxOSINT
+                from modules.child_safety.collectors.roblox_osint import RobloxOSINT
                 self._module_cls = RobloxOSINT
             except Exception:
                 self._module_cls = None
@@ -348,11 +348,11 @@ class DiscordPlugin(PlatformPlugin):
     def __init__(self):
         self._module_cls = None
         try:
-            from .discord_osint import DiscordOSINT
+            from modules.child_safety.collectors.discord_osint import DiscordOSINT
             self._module_cls = DiscordOSINT
         except Exception:
             try:
-                from modules.discord_osint import DiscordOSINT
+                from modules.child_safety.collectors.discord_osint import DiscordOSINT
                 self._module_cls = DiscordOSINT
             except Exception:
                 self._module_cls = None

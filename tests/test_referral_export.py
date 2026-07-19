@@ -20,9 +20,9 @@ import zipfile
 
 import pytest
 
-from modules.referral_export import export_referral, REFERRAL_FORMAT_VERSION
-from modules.case_log import ChainOfCustodyLog
-from modules.evidence_packager import create_evidence_package
+from modules.child_safety.referral_export import export_referral, REFERRAL_FORMAT_VERSION
+from core.case_log import ChainOfCustodyLog
+from core.evidence_packager import create_evidence_package
 
 
 def seed(directory):

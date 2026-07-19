@@ -15,10 +15,10 @@ class PatternCategory(str, Enum):
     TRUST_BUILDING = "trust_building"
 
 
-class Decision(str, Enum):
-    ALLOW = "allow"
-    REVIEW = "review"
-    ESCALATE = "escalate"
+# Decision moved to core.contracts in Roadmap Phase 1: the allow / review /
+# escalate triad is a platform-wide concept. Re-exported here so existing
+# imports keep working.
+from core.contracts import Decision  # noqa: E402
 
 
 PATTERN_WEIGHTS = {

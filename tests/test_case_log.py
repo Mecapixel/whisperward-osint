@@ -16,7 +16,7 @@ import tempfile
 
 import pytest
 
-from modules.case_log import ChainOfCustodyLog, GENESIS_PREVIOUS_HASH
+from core.case_log import ChainOfCustodyLog, GENESIS_PREVIOUS_HASH
 
 
 @pytest.fixture

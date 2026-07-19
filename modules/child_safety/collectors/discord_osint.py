@@ -49,8 +49,8 @@ from typing import Any, Dict, Optional
 
 import aiohttp
 
-from .base_module import BaseOSINTModule
-from .rate_limiter import api_limiter
+from core.base_module import BaseOSINTModule
+from core.rate_limiter import api_limiter
 
 
 # Discord API surface. Only public, tokenless endpoints appear here by design.

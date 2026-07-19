@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from synthetic_profile_generator import (
+from modules.child_safety.eval.synthetic_profile_generator import (
     SyntheticDataset,
     SyntheticProfileGenerator,
 )

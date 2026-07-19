@@ -9,7 +9,7 @@ import logging
 import pytest
 import structlog
 
-from structured_logger import (
+from core.structured_logger import (
     CaseAuditLogger,
     configure_logging,
     get_logger,

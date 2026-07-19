@@ -16,7 +16,7 @@ import asyncio
 
 import pytest
 
-from modules.platform_plugin import (PlatformPlugin, RobloxPlugin, DiscordPlugin,
+from core.platform_plugin import (PlatformPlugin, RobloxPlugin, DiscordPlugin,
                                       PluginRegistry, default_registry,
                                       empty_profile, NORMALIZED_KEYS, RiskSignal)
 
