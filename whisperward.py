@@ -374,6 +374,328 @@ def correlate(
     )
 
 
+# ---------------------------------------------------------------------------
+# Platform Phase 3 — Entity resolution, identity graph, investigation timeline
+# ---------------------------------------------------------------------------
+
+def _latest_artifact_payload(case_id: str, artifact_type: str, database):
+    """Return the most recent sealed artifact of a given type for a case, or
+    None. The Phase 3 commands reason over sealed correlation output rather
+    than re-running analysis, so the evidence a decision rests on is exactly
+    the evidence in the store."""
+    import json as _json
+    conn = database.get_connection()
+    row = conn.execute(
+        "SELECT raw_data FROM artifacts WHERE artifact_type = ? "
+        "AND target_id IN (SELECT target_id FROM targets WHERE case_id = ?) "
+        "ORDER BY artifact_id DESC LIMIT 1",
+        (artifact_type, case_id),
+    ).fetchone()
+    if row is None:
+        return None
+    try:
+        return _json.loads(row["raw_data"])
+    except (ValueError, TypeError):
+        return None
+
+
+@app.command("propose-entities")
+def propose_entities(case_id: str = typer.Option(..., "--case", help="Case ID")):
+    """Propose entity candidates from the case's sealed correlation output.
+
+    Candidates are machine-proposed groupings, never identity determinations.
+    Each membership carries its supporting edges; accounts whose every path is
+    contradicted are excluded with the reason on the record. Proposals are
+    sealed into the evidence store for the analyst to review and, if
+    warranted, promote."""
+    from core.entity import EntityResolver
+
+    payload = _latest_artifact_payload(case_id, "identity_correlation", db)
+    if payload is None:
+        console.print("[yellow]No sealed correlation found for this case. "
+                      "Run `correlate --case " + case_id + "` first.[/yellow]")
+        return
+
+    resolver = EntityResolver()
+    groups = [set(g) for g in payload.get("cluster", {}).get("groups", [])]
+    candidates = resolver.propose(case_id, groups, payload.get("pairwise", []))
+
+    if not candidates:
+        console.print("[cyan]No multi-account groupings with uncontradicted "
+                      "lead-strength support were found.[/cyan]")
+        return
+
+    for cand in candidates:
+        console.print(f"\n[bold cyan]Candidate {cand.candidate_id}[/bold cyan] "
+                      f"(mean lead strength {cand.mean_strength:.2f})")
+        for member in cand.members:
+            console.print(f"  [green]included[/green] {member.profile_id}")
+            for edge in member.justification.supporting_edges:
+                mark = "[red]contradicted[/red]" if edge["contradiction_note"] else (
+                    "lead" if edge["is_lead"] else "sub-lead")
+                console.print(f"      ↔ {edge['with']}  strength {edge['strength']:.2f}  ({mark})")
+        for excluded in cand.excluded:
+            console.print(f"  [yellow]excluded[/yellow] {excluded['profile_id']} — {excluded['reason']}")
+
+    targets = db.get_case_targets(case_id)
+    artifact_id = db.save_artifact(
+        target_id=targets[0]["target_id"],
+        module_name="EntityResolver",
+        artifact_type="entity_candidates",
+        raw_data={"case_id": case_id,
+                  "candidates": [c.to_dict() for c in candidates]},
+    )
+    console.print(f"\n[green]✅ Proposals sealed as artifact {artifact_id}[/green]")
+    console.print("[dim]Promotion to a resolved entity is an explicit analyst "
+                  "decision: promote-entity --case " + case_id
+                  + " --candidate <ID> --analyst \"Your Name\"[/dim]")
+
+
+@app.command("promote-entity")
+def promote_entity(
+    case_id: str = typer.Option(..., "--case", help="Case ID"),
+    candidate_id: str = typer.Option(..., "--candidate", help="Candidate ID from propose-entities"),
+    analyst: str = typer.Option(..., "--analyst", help="Analyst making the resolution decision"),
+    handle: Optional[str] = typer.Option(None, "--handle", help="Canonical handle for the entity"),
+    note: str = typer.Option("", "--note", help="Analyst note recorded with the promotion"),
+):
+    """Promote a proposed candidate to a resolved entity.
+
+    This is the human decision the resolver exists to support. The promotion
+    is attributed to the named analyst and lands in the tamper-evident chain
+    of custody alongside the machine's justification."""
+    from core.entity import EntityResolver, candidate_from_dict
+
+    payload = _latest_artifact_payload(case_id, "entity_candidates", db)
+    if payload is None:
+        console.print("[yellow]No sealed entity proposals for this case. "
+                      "Run `propose-entities --case " + case_id + "` first.[/yellow]")
+        return
+
+    match = next((c for c in payload.get("candidates", [])
+                  if c.get("candidate_id") == candidate_id), None)
+    if match is None:
+        console.print(f"[red]Candidate {candidate_id} not found in the latest "
+                      "sealed proposals for this case.[/red]")
+        return
+
+    entity = EntityResolver().promote(
+        candidate_from_dict(match), analyst=analyst,
+        canonical_handle=handle, analyst_note=note)
+    db.save_entity(entity)
+    console.print(f"[bold green]✅ Entity {entity.entity_id} "
+                  f"('{entity.canonical_handle}') resolved by {entity.promoted_by} "
+                  "and recorded in the chain of custody.[/bold green]")
+    for member in entity.members:
+        console.print(f"  member: {member.profile_id}")
+
+
+@app.command()
+def entities(case_id: str = typer.Option(..., "--case", help="Case ID")):
+    """List resolved entities for a case, with members and promotion record."""
+    stored = db.get_case_entities(case_id)
+    if not stored:
+        console.print("[cyan]No resolved entities for this case.[/cyan]")
+        return
+    for record in stored:
+        entity = record["entity"]
+        console.print(f"\n[bold cyan]{entity['entity_id']}[/bold cyan] "
+                      f"'{entity['canonical_handle']}' — promoted by "
+                      f"{entity['promoted_by']} at {entity['promoted_at']}")
+        if entity.get("analyst_note"):
+            console.print(f"  note: {entity['analyst_note']}")
+        for member in record["members"]:
+            console.print(f"  member: {member['platform']}:{member['username']}")
+
+
+@app.command("identity-graph")
+def identity_graph(
+    case_id: str = typer.Option(..., "--case", help="Case ID"),
+    export_json: bool = typer.Option(False, "--json", help="Write canonical JSON to exports/"),
+):
+    """Build the justified identity graph from sealed correlation output.
+
+    Every edge carries its complete justification; resolved entities label the
+    nodes a human confirmed. The canonical JSON export hashes identically for
+    identical content, so it can travel inside evidence packages."""
+    from core.entity import entity_from_row
+    from core.identity_graph import IdentityGraph
+
+    payload = _latest_artifact_payload(case_id, "identity_correlation", db)
+    if payload is None:
+        console.print("[yellow]No sealed correlation found for this case. "
+                      "Run `correlate --case " + case_id + "` first.[/yellow]")
+        return
+
+    resolved = [entity_from_row(r["entity"], r["members"])
+                for r in db.get_case_entities(case_id)]
+    graph_obj = IdentityGraph.from_correlation(
+        case_id, payload.get("pairwise", []), entities=resolved)
+
+    inputs = graph_obj.risk_inputs()
+    console.print(f"[bold cyan]Identity graph for {case_id}[/bold cyan]")
+    console.print(f"  nodes: {len(graph_obj.nodes())}   "
+                  f"edges: {graph_obj.graph.number_of_edges()}")
+    console.print(f"  contradiction-free lead edges: {inputs['graph_lead_edge_count']}   "
+                  f"platforms corroborated: {inputs['graph_lead_platforms']}   "
+                  f"strongest lead: {inputs['graph_max_lead_strength']:.2f}")
+    if inputs["graph_has_contradictions"]:
+        console.print("  [yellow]contradicted edges present — excluded from corroboration[/yellow]")
+    for node in graph_obj.nodes():
+        data = graph_obj.graph.nodes[node]
+        label = f" → entity {data['entity_id']}" if data.get("entity_id") else ""
+        console.print(f"  {node}{label}")
+
+    if export_json:
+        from pathlib import Path
+        out_dir = Path("exports")
+        out_dir.mkdir(exist_ok=True)
+        out_path = out_dir / f"{case_id}_identity_graph.json"
+        out_path.write_text(graph_obj.to_canonical_json(), encoding="utf-8")
+        console.print(f"[green]✅ Canonical graph written to {out_path}[/green]")
+
+    console.print("[dim]Edges are correlation leads with supporting evidence, "
+                  "not assertions of shared identity.[/dim]")
+
+
+@app.command()
+def timeline(
+    case_id: str = typer.Option(..., "--case", help="Case ID"),
+    kind: Optional[str] = typer.Option(None, "--kind", help="Filter by event kind prefix"),
+    target: Optional[int] = typer.Option(None, "--target", help="Filter by target id"),
+):
+    """Print the case's reconstructed investigation timeline.
+
+    Strictly reconstructive: every event names its source table and row, and
+    no event is inferred."""
+    from core.timeline import InvestigationTimeline
+
+    built = InvestigationTimeline.build(db, case_id)
+    events = built.filter(kind=kind, target_id=target)
+    if not events:
+        console.print("[cyan]No events on record for this selection.[/cyan]")
+        return
+    from rich.table import Table
+    table = Table(title=f"Investigation Timeline — {case_id}", show_lines=False)
+    table.add_column("Timestamp (UTC)", overflow="fold")
+    table.add_column("Event", style="cyan")
+    table.add_column("Description", overflow="fold")
+    table.add_column("Source", overflow="fold")
+    for event in events:
+        table.add_row(event.timestamp, event.kind, event.description,
+                      f"{event.source_table}#{event.source_ref}")
+    console.print(table)
+    console.print(f"[dim]{len(events)} event(s); reconstructed from the case "
+                  "record only.[/dim]")
+
+
+# ---------------------------------------------------------------------------
+# Platform Phase 4 — Standards-aware intelligence
+# ---------------------------------------------------------------------------
+
+@app.command()
+def stix(
+    case_id: str = typer.Option(..., "--case", help="Case ID"),
+    out: Optional[str] = typer.Option(None, "--out", help="Output path (defaults to exports/<case>_stix_bundle.json)"),
+):
+    """Export the case as a STIX 2.1 bundle for threat-intelligence platforms.
+
+    The bundle carries observed accounts, correlation leads with confidence
+    and rationale, and analyst-resolved entities. It never asserts adversaries,
+    malware, or attacks, and the scope statement travels inside the bundle.
+    The export is byte-stable for identical content and is sealed into the
+    evidence store."""
+    from datetime import datetime, timezone
+    from pathlib import Path
+    from core.stix_export import StixExporter, canonical_bundle_json
+
+    targets = db.get_case_targets(case_id)
+    if not targets:
+        console.print("[yellow]Case has no targets on record; nothing to export.[/yellow]")
+        return
+
+    as_of = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    bundle = StixExporter(as_of=as_of).bundle_for_case(db, case_id)
+    body = canonical_bundle_json(bundle)
+
+    out_path = Path(out) if out else Path("exports") / f"{case_id}_stix_bundle.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(body, encoding="utf-8")
+
+    artifact_id = db.save_artifact(
+        target_id=targets[0]["target_id"],
+        module_name="StixExporter",
+        artifact_type="stix_bundle",
+        raw_data={"case_id": case_id, "as_of": as_of,
+                  "object_count": len(bundle.objects),
+                  "path": str(out_path)},
+        file_path=str(out_path),
+    )
+    console.print(f"[green]✅ STIX 2.1 bundle ({len(bundle.objects)} objects) "
+                  f"written to {out_path} and sealed as artifact {artifact_id}[/green]")
+    console.print("[dim]The bundle asserts no adversary, malware, or attack; "
+                  "relationships are correlation leads with confidence and "
+                  "rationale attached.[/dim]")
+
+
+@app.command("attack-map")
+def attack_map(case_id: str = typer.Option(..., "--case", help="Case ID")):
+    """Show the honest MITRE ATT&CK mapping for the case's latest analysis.
+
+    Maps only the technical signals that actually fired, grades each mapping
+    direct or analogue, and states explicitly which findings are outside
+    ATT&CK's scope and where they are documented instead."""
+    import json as _json
+    from core.attack_mapping import map_risk_result
+
+    conn = db.get_connection()
+    row = conn.execute(
+        "SELECT findings, target_id FROM analysis_results WHERE target_id IN "
+        "(SELECT target_id FROM targets WHERE case_id = ?) "
+        "AND analysis_type = 'risk_engine_v1' "
+        "ORDER BY result_id DESC LIMIT 1", (case_id,)).fetchone()
+    if row is None:
+        console.print("[yellow]No structured risk analysis on record for this "
+                      "case. Run `analyze --case " + case_id + "` first.[/yellow]")
+        return
+    try:
+        findings = _json.loads(row["findings"])
+    except (ValueError, TypeError):
+        console.print("[red]Stored findings could not be parsed.[/red]")
+        return
+
+    # The anonymization flags live in the collected artifacts, not the stored
+    # findings; rebuild the same signals the engine scored so the mapping can
+    # distinguish Tor from VPN honestly.
+    from core.risk_scoring import build_signals
+    signals, _ = build_signals(conn, row["target_id"])
+    mapping = map_risk_result(findings,
+                              is_tor=bool(signals.is_tor),
+                              is_vpn=bool(signals.is_vpn))
+
+    if mapping["mapped"]:
+        from rich.table import Table
+        table = Table(title=f"ATT&CK Mapping — {case_id}", show_lines=False)
+        table.add_column("Technique", style="cyan")
+        table.add_column("Name", overflow="fold")
+        table.add_column("Tactic")
+        table.add_column("Applicability")
+        for m in mapping["mapped"]:
+            table.add_row(m["technique_id"], m["technique_name"],
+                          m["tactic"], m["applicability"])
+        console.print(table)
+        for m in mapping["mapped"]:
+            console.print(f"  [dim]{m['technique_id']}: {m['justification']}[/dim]")
+    else:
+        console.print("[cyan]No fired signal maps to an ATT&CK technique for "
+                      "this analysis.[/cyan]")
+
+    for u in mapping["unmapped"]:
+        console.print(f"\n[yellow]Out of ATT&CK scope:[/yellow] {u['signal']} — "
+                      f"{u['reason']} (documented in {u['documented_in']})")
+    console.print(f"\n[dim]{mapping['scope_statement']}[/dim]")
+
+
 @app.command()
 def run(
     case_id: str = typer.Option(..., "--case", help="Case ID"),

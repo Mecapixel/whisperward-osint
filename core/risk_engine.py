@@ -54,6 +54,18 @@ class RiskSignals:
     prior_case_flags: int = 0
     declared_age: Optional[int] = None
     classifier_result: Optional[ClassifierResult] = None
+    # Platform Phase 3 M4 — graph-aware inputs. All optional: when absent the
+    # engine scores exactly as before. When present (populated from
+    # IdentityGraph.risk_inputs()), the cross-platform component reasons over
+    # graph-corroborated platforms — platforms connected by contradiction-free
+    # lead-strength correlation edges — instead of the flat platform count,
+    # and its explanation enumerates the corroboration it relied on. Graph
+    # inputs refine the existing weighted component; they never add a new
+    # scoring path and never alter any other component.
+    graph_lead_platforms: Optional[int] = None
+    graph_lead_edge_count: Optional[int] = None
+    graph_max_lead_strength: Optional[float] = None
+    graph_has_contradictions: bool = False
 
 
 @dataclass
@@ -260,6 +272,27 @@ class RiskEngine:
         return "low", reasons
 
     def _confidence_cross_platform(self, signals: RiskSignals) -> tuple[str, list[str]]:
+        if signals.graph_lead_platforms is not None:
+            n = int(signals.graph_lead_platforms)
+            edges = signals.graph_lead_edge_count or 0
+            reasons = [f"identity graph corroboration: {n} platform(s) "
+                       f"connected by {edges} contradiction-free lead edge(s)"]
+            if signals.graph_max_lead_strength is not None:
+                reasons.append("strongest supporting correlation: "
+                               + str(round(float(signals.graph_max_lead_strength), 2)))
+            if signals.graph_has_contradictions:
+                # Contradictions never alter the score; they cap how much the
+                # corroboration can be trusted, with the reason on the record.
+                reasons.append("correlation graph contains contradicted edges; "
+                               "corroboration is partial")
+                return "medium", reasons
+            if n >= 2:
+                reasons.append("corroboration rests on justified correlation "
+                               "edges, each carrying its own evidence trail")
+                return "high", reasons
+            reasons.append("no justified cross-platform link; single-platform "
+                           "treatment applied")
+            return "medium", reasons
         n = signals.platform_count
         reasons = [f"identity observed on {n} platform(s)"]
         if n >= 2:
@@ -337,12 +370,26 @@ class RiskEngine:
 
         return raw, explanation
 
+    @staticmethod
+    def _effective_platform_count(signals: RiskSignals) -> int:
+        """Phase 3 M4: when graph inputs are present, the component reasons
+        over graph-corroborated platforms — platforms actually connected by
+        contradiction-free lead edges — rather than the flat observed count.
+        The corroborated count can be lower than the flat count (accounts that
+        were observed but never justifiably linked) and that is the point: the
+        score follows the evidence the graph can defend. Without graph inputs,
+        behavior is unchanged."""
+        if signals.graph_lead_platforms is not None:
+            return int(signals.graph_lead_platforms)
+        return signals.platform_count
+
     def _score_cross_platform(self, signals: RiskSignals) -> float:
-        if signals.platform_count >= 4:
+        n = self._effective_platform_count(signals)
+        if n >= 4:
             return 1.0
-        if signals.platform_count == 3:
+        if n == 3:
             return 0.7
-        if signals.platform_count == 2:
+        if n == 2:
             return 0.4
         return 0.0
 
@@ -417,6 +464,22 @@ class RiskEngine:
         return min(0.15, bonus)
 
     def _explain_cross_platform(self, signals: RiskSignals) -> str:
+        if signals.graph_lead_platforms is not None:
+            n = int(signals.graph_lead_platforms)
+            edges = signals.graph_lead_edge_count or 0
+            strongest = signals.graph_max_lead_strength
+            if n >= 2:
+                text = (f"identity graph corroborates {n} platforms through "
+                        f"{edges} contradiction-free lead edge(s)")
+                if strongest is not None:
+                    text += f", strongest correlation {round(float(strongest), 2)}"
+                if signals.graph_has_contradictions:
+                    text += ("; contradicted edges exist elsewhere in the graph "
+                             "and were excluded from corroboration")
+                return text
+            return ("identity graph shows no contradiction-free lead edges "
+                    "linking platforms — cross-platform presence is not "
+                    "corroborated")
         if signals.platform_count >= 4:
             return f"username present on {signals.platform_count} platforms — high cross-platform footprint"
         if signals.platform_count == 3:

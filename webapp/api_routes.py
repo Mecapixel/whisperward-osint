@@ -311,3 +311,88 @@ async def platforms() -> Dict[str, Any]:
         return {"platforms": reg.capabilities(), "available": reg.available_platforms()}
     except Exception:
         return {"platforms": {}, "available": []}
+
+
+# ---------------------------------------------------------------------------
+# Platform Phase 3 — entities, identity graph, investigation timeline
+# ---------------------------------------------------------------------------
+
+def _latest_artifact_payload(case_id: str, artifact_type: str):
+    """Most recent sealed artifact of a type for a case, parsed, or None. The
+    graph route reads sealed correlation output rather than recomputing, so the
+    dashboard shows exactly what the evidence store holds."""
+    try:
+        conn = _db.get_connection()
+        row = conn.execute(
+            "SELECT raw_data FROM artifacts WHERE artifact_type = ? "
+            "AND target_id IN (SELECT target_id FROM targets WHERE case_id = ?) "
+            "ORDER BY artifact_id DESC LIMIT 1",
+            (artifact_type, case_id),
+        ).fetchone()
+        if row is None:
+            return None
+        return json.loads(row["raw_data"])
+    except Exception:
+        return None
+
+
+@router.get("/case/{case_id}/entities")
+async def case_entities(case_id: str) -> Dict[str, Any]:
+    """Returns the analyst-resolved entities for a case, each member carrying
+    its stored justification. Empty rather than invented when none exist."""
+    try:
+        stored = _db.get_case_entities(case_id)
+    except Exception:
+        stored = []
+    entities = []
+    for record in stored:
+        entity = dict(record["entity"])
+        members = []
+        for member in record["members"]:
+            member = dict(member)
+            try:
+                member["justification"] = json.loads(member.get("justification") or "{}")
+            except (ValueError, TypeError):
+                member["justification"] = {}
+            members.append(member)
+        entity["members"] = members
+        entities.append(entity)
+    return {"case_id": case_id, "count": len(entities), "entities": entities}
+
+
+@router.get("/case/{case_id}/identity-graph")
+async def case_identity_graph(case_id: str) -> Dict[str, Any]:
+    """Returns the justified identity graph for a case, built from the latest
+    sealed correlation artifact with resolved entities attached. Every edge
+    carries its complete justification; a case with no sealed correlation
+    returns found False rather than an empty fabrication."""
+    payload = _latest_artifact_payload(case_id, "identity_correlation")
+    if payload is None:
+        return {"found": False, "case_id": case_id,
+                "note": "no sealed correlation artifact for this case"}
+    try:
+        from core.entity import entity_from_row
+        from core.identity_graph import IdentityGraph
+        resolved = [entity_from_row(r["entity"], r["members"])
+                    for r in _db.get_case_entities(case_id)]
+        graph_obj = IdentityGraph.from_correlation(
+            case_id, payload.get("pairwise", []), entities=resolved)
+        body = graph_obj.to_dict()
+        body["found"] = True
+        body["risk_inputs"] = graph_obj.risk_inputs()
+        return body
+    except Exception:
+        return {"found": False, "case_id": case_id,
+                "note": "identity graph could not be built"}
+
+
+@router.get("/case/{case_id}/investigation-timeline")
+async def case_investigation_timeline(case_id: str) -> Dict[str, Any]:
+    """Returns the reconstructed investigation timeline for a case. Strictly
+    reconstructive: every event names its source table and row."""
+    try:
+        from core.timeline import InvestigationTimeline
+        return InvestigationTimeline.build(_db, case_id).to_dict()
+    except Exception:
+        return {"case_id": case_id, "event_count": 0, "events": [],
+                "provenance": "timeline could not be built"}

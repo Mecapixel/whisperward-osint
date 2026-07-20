@@ -67,6 +67,21 @@ WhisperWard is a **public-signal threat-hunting and case-preparation tool** for 
 - [x] Audit trail hardening: case creation, target addition, artifact saves, and analysis saves all land in the tamper-evident hash chain; full-lifecycle verification and tamper detection covered by tests
 - [x] Suite grown from 424 to 456 tests, green at every milestone
 
+### Platform Phase 3: Entity Resolution & Identity Graph — complete, July 2026
+- [x] Unified entity model (`core/entity.py`): the resolver proposes candidates from correlation output with full per-membership justification; a contradiction on every supporting edge excludes an account with the reason recorded
+- [x] Analyst-gated promotion: converting a candidate to a resolved entity requires a named analyst and lands in the tamper-evident chain of custody; unattributed resolution refuses to run
+- [x] Identity graph (`core/identity_graph.py`): accounts as nodes, every edge carrying its complete justification (strength, signals, rationale, contradiction note); evidence-bearing path queries; deterministic, byte-stable serialization with a D3-shaped export
+- [x] Investigation timeline (`core/timeline.py`): strictly reconstructive per-case event stream; every event names its source table and row; no event is inferred
+- [x] Graph-aware risk: the cross-platform component reasons over graph-corroborated platforms (contradiction-free lead edges) when graph inputs are present; contradictions cap confidence and never alter a score; calibration harness green
+- [x] Surfacing: `propose-entities`, `promote-entity`, `entities`, `identity-graph`, and `timeline` CLI commands; entities, identity-graph, and investigation-timeline API routes
+
+### Platform Phase 4: Standards-Aware Intelligence — complete, July 2026
+- [x] STIX 2.1 export (`core/stix_export.py`): user-account observables, correlation relationships with confidence and rationale, analyst-resolved entities, and a suspicious-activity grouping; never emits adversary-assertion object types; byte-stable output sealed into the evidence store (`stix` CLI command)
+- [x] Honest MITRE ATT&CK mapping (`core/attack_mapping.py` + `attack-map` CLI): maps only fired technical signals, grades each mapping direct or analogue, and states explicitly which findings are outside ATT&CK's scope and where they are documented instead
+- [x] Behavioral-indicator taxonomy documented at pattern level (`docs/BEHAVIORAL_INDICATORS.md`), weights versioned to the shipped classifier
+- [x] Platform threat model (`THREAT_MODEL.md`): assets, adversaries, failure modes, mitigations, and residual risks stated honestly
+- [x] Suite grown from 456 to 552 tests, green at every milestone
+
 ## Next
 
 - [x] Wire the correlation engine into the CLI pipeline as a first-class `correlate` command — complete, July 2026

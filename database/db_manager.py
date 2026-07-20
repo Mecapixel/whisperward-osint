@@ -240,6 +240,89 @@ class DatabaseManager:
         row = cursor.fetchone()
         return dict(row) if row else None
 
+    # ------------------------------------------------------------------
+    # Resolved entities (Platform Phase 3, Milestone 1)
+    # ------------------------------------------------------------------
+
+    def _ensure_entity_tables(self):
+        """The entity tables ship in schema.sql, but existing deployments
+        created their database before Phase 3. Creating on first use keeps the
+        upgrade path migration-free, the same approach the custody chain takes
+        with its own columns."""
+        conn = self.get_connection()
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS entities (
+                entity_id           TEXT PRIMARY KEY,
+                case_id             TEXT NOT NULL,
+                canonical_handle    TEXT NOT NULL,
+                promoted_by         TEXT NOT NULL,
+                promoted_at         DATETIME NOT NULL,
+                source_candidate_id TEXT,
+                analyst_note        TEXT
+            );
+            CREATE TABLE IF NOT EXISTS entity_members (
+                member_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+                entity_id     TEXT NOT NULL,
+                profile_id    TEXT NOT NULL,
+                platform      TEXT NOT NULL,
+                username      TEXT NOT NULL,
+                justification JSON
+            );
+            CREATE INDEX IF NOT EXISTS idx_entities_case  ON entities(case_id);
+            CREATE INDEX IF NOT EXISTS idx_members_entity ON entity_members(entity_id);
+        """)
+        conn.commit()
+
+    def save_entity(self, entity) -> str:
+        """Persist a ResolvedEntity. Promotion is a consequential human
+        decision, so it lands in the tamper-evident custody chain with the
+        promoting analyst attached."""
+        self._ensure_entity_tables()
+        conn = self.get_connection()
+        conn.execute(
+            "INSERT INTO entities (entity_id, case_id, canonical_handle, "
+            "promoted_by, promoted_at, source_candidate_id, analyst_note) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (entity.entity_id, entity.case_id, entity.canonical_handle,
+             entity.promoted_by, entity.promoted_at,
+             entity.source_candidate_id, entity.analyst_note),
+        )
+        for member in entity.members:
+            conn.execute(
+                "INSERT INTO entity_members (entity_id, profile_id, platform, "
+                "username, justification) VALUES (?, ?, ?, ?, ?)",
+                (entity.entity_id, member.profile_id, member.platform,
+                 member.username, json.dumps(member.justification.to_dict())),
+            )
+        conn.commit()
+        member_list = ", ".join(m.profile_id for m in entity.members)
+        self._chain_append(
+            "entity_promoted", case_id=entity.case_id,
+            analyst=entity.promoted_by,
+            notes="entity " + entity.entity_id + " ('"
+                  + entity.canonical_handle + "') resolved over accounts: "
+                  + member_list)
+        return entity.entity_id
+
+    def get_case_entities(self, case_id: str) -> List[Dict]:
+        """Return every resolved entity for a case, members and
+        justifications included, ready for entity_from_row()."""
+        self._ensure_entity_tables()
+        conn = self.get_connection()
+        entities = []
+        rows = conn.execute(
+            "SELECT * FROM entities WHERE case_id = ? ORDER BY promoted_at",
+            (case_id,)).fetchall()
+        for row in rows:
+            members = conn.execute(
+                "SELECT * FROM entity_members WHERE entity_id = ? "
+                "ORDER BY member_id", (row["entity_id"],)).fetchall()
+            entities.append({
+                "entity": dict(row),
+                "members": [dict(m) for m in members],
+            })
+        return entities
+
     def close(self):
         if self.conn:
             self.conn.close()

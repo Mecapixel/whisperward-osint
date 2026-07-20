@@ -41,6 +41,7 @@ dependencies = [
     "ollama",
     "chromadb",
     "loguru",
+    "stix2",
 ]
 
 [project.optional-dependencies]

@@ -60,3 +60,6 @@ chromadb
 
 # Logging (modules/logger.py)
 loguru
+
+# Platform Phase 4 — Standards-aware intelligence
+stix2
