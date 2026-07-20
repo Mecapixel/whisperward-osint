@@ -42,7 +42,7 @@ try:
     _CASE_LOG_AVAILABLE = True
 except Exception:
     try:
-        from case_log import ChainOfCustodyLog
+        from core.case_log import ChainOfCustodyLog
         _CASE_LOG_AVAILABLE = True
     except Exception:
         ChainOfCustodyLog = None

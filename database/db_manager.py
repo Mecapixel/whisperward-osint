@@ -23,6 +23,17 @@ class DatabaseManager:
             self.conn.row_factory = sqlite3.Row
         return self.conn
 
+    def _chain_append(self, action: str, **kwargs):
+        """Phase 2 M5: every lifecycle state change lands in the
+        tamper-evident custody chain. Chain writes must never break the
+        primary operation, so failures are reported but not raised."""
+        try:
+            from core.case_log import ChainOfCustodyLog
+            ChainOfCustodyLog(connection=self.get_connection()).append(action, **kwargs)
+        except Exception as exc:
+            print("Warning: custody chain append failed for "
+                  + action + ": " + str(exc))
+
     def init(self):
         schema_path = Path("database/schema.sql")
         if not schema_path.exists():
@@ -41,6 +52,8 @@ class DatabaseManager:
             (case_id, name, description, analyst)
         )
         conn.commit()
+        self._chain_append("case_created", case_id=case_id, analyst=analyst,
+                           notes="case '" + name + "' opened")
         return case_id
 
     def add_target(self, case_id: str, platform: str, username: str, notes: str = ""):
@@ -50,6 +63,8 @@ class DatabaseManager:
             (case_id, platform.lower(), username, notes)
         )
         conn.commit()
+        self._chain_append("target_added", case_id=case_id,
+                           notes="target added on " + platform.lower())
 
     def get_case_targets(self, case_id: str) -> List[Dict]:
         conn = self.get_connection()
@@ -69,7 +84,11 @@ class DatabaseManager:
              file_path, sha256)
         )
         conn.commit()
-        return cursor.lastrowid
+        artifact_id = cursor.lastrowid
+        self._chain_append("artifact_saved", target_id=target_id,
+                           artifact_id=artifact_id, sha256=sha256,
+                           notes=module_name + " " + artifact_type)
+        return artifact_id
 
     def get_text_for_analysis(self, case_id: str) -> str:
         conn = self.get_connection()
@@ -96,6 +115,9 @@ class DatabaseManager:
              results.get('notes', ''))
         )
         conn.commit()
+        self._chain_append("analysis_saved", target_id=target_id,
+                           notes=results.get('analysis_type', 'behavioral')
+                           + " analysis recorded")
 
     def get_case_summary(self, case_id: str) -> Dict:
         conn = self.get_connection()

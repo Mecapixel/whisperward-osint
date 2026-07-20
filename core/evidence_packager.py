@@ -162,6 +162,24 @@ def create_evidence_package(case_id: str, export_dir: str = "exports",
                 manifest["files"].append(arcname)
                 manifest["sha256_manifest"][arcname] = _sha256_file(file_path)
 
+            # Phase 2 M1: include the chain-of-custody manifest inside the
+            # package when a database is available, and record its hash in
+            # the package manifest so the custody view is sealed with
+            # everything else.
+            if conn is not None:
+                try:
+                    from core.evidence import build_custody_manifest
+                    custody = build_custody_manifest(case_id, conn)
+                    custody_bytes = json.dumps(
+                        custody, indent=2, sort_keys=True, default=str
+                    ).encode("utf-8")
+                    custody_name = case_id + "_custody_manifest.json"
+                    archive.writestr(custody_name, custody_bytes)
+                    manifest["files"].append(custody_name)
+                    manifest["sha256_manifest"][custody_name] = _sha256_bytes(custody_bytes)
+                except Exception as exc:
+                    manifest["custody_manifest_error"] = str(exc)
+
             # Serialize the manifest, hash that exact serialization, then write
             # both the manifest and a small seal file that records the manifest
             # hash. The seal is what proves the manifest itself was not altered.

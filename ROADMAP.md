@@ -59,6 +59,14 @@ WhisperWard is a **public-signal threat-hunting and case-preparation tool** for 
 - [x] Risk engine decoupled from the child-safety classifier (resolved through the registry; core carries no static import of any specialization)
 - [x] All 424 tests pass against the new layout with import-path updates only
 
+### Platform Phase 2: Evidence & Explainability Engine — complete, July 2026
+- [x] Evidence model (`core/evidence.py`): every artifact carries UUID, SHA-256, UTC timestamp, source, and collector; chain-of-custody manifest sealed inside every evidence package
+- [x] Confidence engine: every score component and overall result carries a confidence level with enumerated reasons; confidence never alters a score
+- [x] Explanation objects (`core/explanation.py`): findings link reasoning, confidence, and evidence references as queryable data
+- [x] Analyst notes (`core/analyst_notes.py`): append-only annotations attached to cases, targets, and findings; every note lands in the custody chain and travels in the manifest
+- [x] Audit trail hardening: case creation, target addition, artifact saves, and analysis saves all land in the tamper-evident hash chain; full-lifecycle verification and tamper detection covered by tests
+- [x] Suite grown from 424 to 456 tests, green at every milestone
+
 ## Next
 
 - [x] Wire the correlation engine into the CLI pipeline as a first-class `correlate` command — complete, July 2026
