@@ -27,7 +27,9 @@ This project demonstrates production-grade skills directly transferable to ICAC-
 
 - Built a complete end-to-end investigative pipeline from raw public data to triaged, human-reviewable, court-defensible intelligence
 - **Defensive and forensic depth:** tamper-evident hash-chained chain of custody, cryptographically signed PDF case reports, PII redaction that never touches the sealed original, a 90-day retention enforcer, and a strict human-in-the-loop mandate on every escalation
-- **Production engineering:** 424 passing tests, structured logging, token-bucket rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
+- **Production engineering:** 552 passing tests, structured logging, token-bucket rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
+- **Standards-aware intelligence:** STIX 2.1 export with confidence and rationale on every relationship, an honest MITRE ATT&CK mapping that grades each technique direct or analogue and states what falls outside ATT&CK's scope, and a documented platform threat model ([`THREAT_MODEL.md`](THREAT_MODEL.md))
+- **Identity resolution done defensibly:** analyst-gated entity resolution where every graph edge carries its full justification, contradictions exclude accounts with the reason recorded, and promotion to a resolved identity requires a named analyst and lands in the tamper-evident custody chain
 - **Responsible AI:** local-only analysis with explainable, decomposable risk scoring — no investigative data ever leaves the machine
 - **Full-stack delivery:** Python backend, a JSON API layer, and a D3-driven web dashboard with live data
 - **Governance first:** documented ethical boundaries, bias and fairness testing, and a calibrated tiered review workflow — see [`POLICY_BOUNDARY.md`](POLICY_BOUNDARY.md) and [`ethical_governance.md`](ethical_governance.md)
@@ -133,7 +135,7 @@ The dashboard asks for an operator name at sign-in. This is deliberately lightwe
 - Live Roblox avatar rendering in the subject dossier
 
 **Engineering**
-- 424 passing pytest tests, structured logging, rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
+- 552 passing pytest tests, structured logging, rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
 
 **Correlation and enrichment**
 - Cross-platform correlation engine fusing five rarity-weighted signals — username (RapidFuzz), stylometry, activity timing, shared network, and perceptual avatar hashing — with NetworkX identity clustering, contradiction checking, and per-signal rationale with a first-class CLI `correlate` command that seals its full result into the evidence store
@@ -141,6 +143,19 @@ The dashboard asks for an operator name at sign-in. This is deliberately lightwe
 - Roblox investigation enrichment built on the plugin architecture, feeding review-only leads to the risk engine
 - Discord public OSINT module (invite and widget intelligence, tokenless and public-data-only) implementing the same plugin contract
 - CSAM hash detection module — architecture complete and tested, approval-gated and disabled by default pending external authorization (hash and metadata only, never image content)
+
+**Entity resolution and identity graph**
+- Unified entity model where the resolver proposes candidate identities from correlation output with full per-membership justification; a contradiction on any supporting edge excludes an account with the reason recorded
+- Analyst-gated promotion: converting a candidate to a resolved entity requires a named analyst and is sealed into the tamper-evident chain of custody — unattributed resolution refuses to run
+- Identity graph with accounts as nodes and every edge carrying its complete justification (strength, signals, rationale, contradiction notes), evidence-bearing path queries, and deterministic byte-stable serialization with a D3-shaped export
+- Strictly reconstructive investigation timeline: every event names its source table and row, and no event is ever inferred
+- Graph-aware risk scoring that reasons over graph-corroborated platforms when graph inputs are present; contradictions cap confidence and never alter a score
+
+**Standards-aware intelligence**
+- STIX 2.1 export: user-account observables, correlation relationships with confidence and rationale, analyst-resolved entities, and a suspicious-activity grouping — never emits adversary-assertion object types; byte-stable output sealed into the evidence store
+- Honest MITRE ATT&CK mapping that maps only fired technical signals, grades each mapping direct or analogue, and states explicitly which findings fall outside ATT&CK's scope and where they are documented instead
+- Behavioral-indicator taxonomy documented at pattern level ([`docs/BEHAVIORAL_INDICATORS.md`](docs/BEHAVIORAL_INDICATORS.md)) with weights versioned to the shipped classifier
+- Platform threat model ([`THREAT_MODEL.md`](THREAT_MODEL.md)) covering assets, adversaries, failure modes, mitigations, and residual risks
 
 ### In active development
 - Additional platform modules via the plugin contract (public data only)
@@ -188,7 +203,7 @@ WhisperWard separates a reusable investigation core from the specializations bui
 
 ## Tech Stack
 
-Python · Typer · Rich · FastAPI · D3.js · SQLite · ChromaDB · Ollama (qwen2.5-coder:7b) · pyHanko · reportlab · pytest · Loguru · structlog
+Python · Typer · Rich · FastAPI · D3.js · SQLite · ChromaDB · Ollama (qwen2.5-coder:7b) · NetworkX · stix2 · pyHanko · reportlab · pytest · Loguru · structlog
 
 ---
 
@@ -231,6 +246,21 @@ python whisperward.py analyze --case CASE-XXXXXXXX --ai
 
 # Correlate identities across all targets in the case
 python whisperward.py correlate --case CASE-XXXXXXXX
+
+# Propose candidate entities from correlation output, then review them
+python whisperward.py propose-entities --case CASE-XXXXXXXX
+python whisperward.py entities --case CASE-XXXXXXXX
+
+# Promote a reviewed candidate to a resolved entity (requires a named analyst)
+python whisperward.py promote-entity --case CASE-XXXXXXXX --candidate CANDIDATE-ID --analyst "Analyst Name"
+
+# View the identity graph and the reconstructive investigation timeline
+python whisperward.py identity-graph --case CASE-XXXXXXXX
+python whisperward.py timeline --case CASE-XXXXXXXX
+
+# Export the case as a STIX 2.1 bundle and map fired signals to MITRE ATT&CK
+python whisperward.py stix --case CASE-XXXXXXXX
+python whisperward.py attack-map --case CASE-XXXXXXXX
 
 # Generate the identity relationship graph
 python whisperward.py graph --case CASE-XXXXXXXX
