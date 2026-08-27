@@ -9,7 +9,7 @@
 
 WhisperWard combines public-data collection, behavioral analysis, cross-platform identity correlation, and transparent, explainable risk scoring — while preserving human decision-making at every escalation. It is modular and local-first: it processes only publicly accessible data, runs AI analysis entirely on the local machine, and requires human review before any escalation.
 
-Built by **Meca Dismukes (Pixora Inc.)** as both an active investigative tool and a portfolio project for ICAC-aligned and Trust & Safety work.
+Built by **Meca Dismukes** as both an active investigative tool and a portfolio project for ICAC-aligned and Trust & Safety work.
 
 **Live demo:** [whisperward-osint.onrender.com](https://whisperward-osint.onrender.com) — seeded with clearly labeled synthetic cases. Hosted on a free tier, so the first visit after idle takes about thirty to sixty seconds to spin up.
 
@@ -292,4 +292,4 @@ WhisperWard is licensed under AGPL-3.0 deliberately. As a child-safety tool, it 
 
 ---
 
-Built and maintained by Meca Dismukes — Pixora Inc.
+Built and maintained by Meca Dismukes.

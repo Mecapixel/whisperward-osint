@@ -1,6 +1,6 @@
 # WhisperWard OSINT — Policy Boundary & Scope
 
-**Version:** 1.1 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
+**Version:** 1.2 | **Last Updated:** August 2026 | **Maintainer:** Meca Dismukes
 
 WhisperWard is a public-signal threat-hunting and case-preparation intelligence tool focused on protecting minors on platforms like Roblox and Discord. This document defines what WhisperWard is, what it is not, and the non-negotiable operational constraints that govern every aspect of its design and use.
 

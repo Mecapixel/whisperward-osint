@@ -1,6 +1,6 @@
 # WhisperWard OSINT — Ethical & Governance Framework
 
-**Version:** 2.3 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
+**Version:** 2.4 | **Last Updated:** August 2026 | **Maintainer:** Meca Dismukes
 
 This document governs all data collection, analysis, escalation, and retention decisions made by WhisperWard. It is a required artifact for ROOST grant compliance, NCMEC-aligned partnership reviews, and Roblox Trust & Safety evaluations. It is a living document updated with each major release.
 
@@ -46,7 +46,7 @@ Audit results are documented in this file and in the transparency report. Result
 
 ## 5. Transparency Report Template
 
-Pixora Inc. will publish a quarterly transparency report covering WhisperWard operational statistics. Required fields include scans performed total and per platform, Tier 1 through Tier 3 cases triggered, false positive rate from the test suite updated per release, CyberTipline referral packages generated but not filed without human approval, data retention purge events by count not case detail, and bias audit status for the current release.
+The project maintainer will publish a quarterly transparency report covering WhisperWard operational statistics. Required fields include scans performed total and per platform, Tier 1 through Tier 3 cases triggered, false positive rate from the test suite updated per release, CyberTipline referral packages generated but not filed without human approval, data retention purge events by count not case detail, and bias audit status for the current release.
 
 ## 6. CSAM Hash Detection Policy
 
@@ -98,12 +98,7 @@ WhisperWard's grooming pattern classifier (`behavioral_classifier.py`) detects c
 
 ### Pattern Sources
 
-All grooming patterns in the classifier are derived exclusively from public domain sources:
-
-- Federal ICAC prosecution records (public court documents)
-- NCMEC published research on online enticement patterns
-- Thorn technical reports on predator communication methodology
-- Internet Watch Foundation behavioral documentation
+All grooming patterns in the classifier are derived exclusively from public domain sources: federal ICAC prosecution records available through public court documents, NCMEC published research on online enticement patterns, Thorn technical reports on predator communication methodology, and Internet Watch Foundation behavioral documentation.
 
 No real chat logs, no real victim communications, and no private law enforcement databases were used in classifier development.
 
