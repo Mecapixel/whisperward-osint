@@ -226,6 +226,32 @@ class TestInference:
             [self._pair("roblox:beta1", "roblox:beta2", contradiction="timezone conflict")]
         ) == []
 
+    def test_engine_clean_sentinel_is_not_a_contradiction(self):
+        """CorrelationEngine reports a clean pair with a sentence rather than an
+        empty string. Treating that sentence as a contradiction would make
+        inference silently produce nothing against real sealed output."""
+        graph = self._seeded()
+        produced = graph.infer_successions([
+            self._pair("roblox:beta1", "roblox:beta2",
+                       contradiction="no contradictions detected")
+        ])
+        assert len(produced) == 1
+        assert produced[0].predecessor == "roblox:beta1"
+
+    def test_clean_sentinel_match_ignores_case_and_padding(self):
+        graph = self._seeded()
+        assert len(graph.infer_successions([
+            self._pair("roblox:beta1", "roblox:beta2",
+                       contradiction="  No Contradictions Detected  ")
+        ])) == 1
+
+    def test_real_contradiction_still_skipped_alongside_sentinel_support(self):
+        graph = self._seeded()
+        assert graph.infer_successions([
+            self._pair("roblox:beta1", "roblox:beta2",
+                       contradiction="no contradictions detected; timezone conflict")
+        ]) == []
+
     def test_require_lead_filters_non_leads(self):
         graph = self._seeded()
         pair = self._pair("roblox:beta1", "roblox:beta2", is_lead=False)

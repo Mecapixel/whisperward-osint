@@ -50,6 +50,22 @@ HANDED_OFF_TO = "handed_off_to"
 DEFAULT_INFERENCE_FLOOR = 0.65
 DEFAULT_RECONSTITUTION_WINDOW_DAYS = 30
 
+# CorrelationEngine reports a clean pair with a sentence rather than an empty
+# string, so a truthiness test on contradiction_note treats every clean pair as
+# contradicted. Normalizing here keeps inference working against real sealed
+# correlation output without changing what the engine emits.
+_CLEAN_CONTRADICTION_NOTES = frozenset({
+    "",
+    "no contradictions detected",
+})
+
+
+def _has_contradiction(note) -> bool:
+    """True when a contradiction note records an actual contradiction."""
+    if not note:
+        return False
+    return str(note).strip().lower() not in _CLEAN_CONTRADICTION_NOTES
+
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -303,7 +319,7 @@ class PersistenceGraph:
         for pair in pairwise:
             if hasattr(pair, "to_dict"):
                 pair = pair.to_dict()
-            if pair.get("contradiction_note"):
+            if _has_contradiction(pair.get("contradiction_note")):
                 continue
             strength = float(pair.get("correlation_strength", 0.0))
             if strength < strength_floor:

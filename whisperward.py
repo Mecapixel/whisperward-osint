@@ -712,5 +712,221 @@ def run(
     console.print("[bold green]🎉 Full pipeline completed successfully![/bold green]")
 
 
+# ---------------------------------------------------------------------------
+# Persistence and reconstitution tracking
+# ---------------------------------------------------------------------------
+
+def _all_artifact_payloads(case_id: str, artifact_type: str, database) -> list:
+    """Return every sealed artifact of a type for a case, oldest first.
+
+    The persistence commands reason over sealed account state rather than a
+    mutable table, so the timestamps a succession rests on are themselves
+    evidence. Later records for the same profile supersede earlier ones on
+    replay, and the superseded record stays in the store.
+    """
+    import json as _json
+    conn = database.get_connection()
+    rows = conn.execute(
+        "SELECT raw_data FROM artifacts WHERE artifact_type = ? "
+        "AND target_id IN (SELECT target_id FROM targets WHERE case_id = ?) "
+        "ORDER BY artifact_id ASC",
+        (artifact_type, case_id),
+    ).fetchall()
+    payloads = []
+    for row in rows:
+        try:
+            payloads.append(_json.loads(row["raw_data"]))
+        except (ValueError, TypeError):
+            continue
+    return payloads
+
+
+def _load_persistence_graph(case_id: str, database):
+    """Build a PersistenceGraph seeded with every sealed account state for the
+    case. Returns the graph and the sealed correlation payload, or (None, None)
+    when the case has no correlation to reason over."""
+    from core.persistence_graph import AccountState, AccountStatus, PersistenceGraph
+
+    payload = _latest_artifact_payload(case_id, "identity_correlation", database)
+    if payload is None:
+        return None, None
+
+    pgraph = PersistenceGraph(case_id)
+    for record in _all_artifact_payloads(case_id, "account_state", database):
+        try:
+            status = AccountStatus(record.get("status", "unknown"))
+        except ValueError:
+            status = AccountStatus.UNKNOWN
+        pgraph.upsert_account(AccountState(
+            profile_id=record["profile_id"],
+            status=status,
+            first_observed=record.get("first_observed", "") or "",
+            created_at=record.get("created_at", "") or "",
+            removed_at=record.get("removed_at", "") or "",
+            last_observed=record.get("last_observed", "") or "",
+        ))
+    return pgraph, payload
+
+
+@app.command("account-state")
+def account_state(
+    case_id: str = typer.Option(..., "--case", help="Case ID"),
+    profile: str = typer.Option(..., "--profile", help="Profile ID as platform:username"),
+    status: str = typer.Option("unknown", "--status",
+                               help="active, removed, suspended, dormant or unknown"),
+    created: str = typer.Option("", "--created", help="Account creation timestamp, ISO 8601"),
+    removed: str = typer.Option("", "--removed", help="Removal timestamp, ISO 8601"),
+    analyst: str = typer.Option("Meca Dismukes", "--analyst", help="Analyst recording the state"),
+):
+    """Record an account's temporal state and seal it into the evidence store.
+
+    Succession direction is derived from removal and creation timestamps, so
+    this is the input the persistence graph needs before it can order anything.
+    An account with no recorded removal simply never becomes a predecessor.
+    """
+    from core.persistence_graph import AccountStatus
+
+    targets = db.get_case_targets(case_id)
+    if not targets:
+        console.print("[yellow]No targets in this case. Add a target first.[/yellow]")
+        return
+    if ":" not in profile:
+        console.print("[yellow]Profile must be platform:username, "
+                      "matching the correlation profile IDs.[/yellow]")
+        return
+    try:
+        parsed_status = AccountStatus(status.lower())
+    except ValueError:
+        console.print(f"[yellow]Unknown status '{status}'. Use active, removed, "
+                      "suspended, dormant or unknown.[/yellow]")
+        return
+    if parsed_status is AccountStatus.REMOVED and not removed:
+        console.print("[yellow]A removed account needs --removed with the removal "
+                      "timestamp, otherwise it cannot be ordered in a chain.[/yellow]")
+        return
+
+    record = {
+        "profile_id": profile,
+        "status": parsed_status.value,
+        "created_at": created,
+        "removed_at": removed,
+        "recorded_by": analyst,
+    }
+    artifact_id = db.save_artifact(
+        target_id=targets[0]["target_id"],
+        module_name="PersistenceGraph",
+        artifact_type="account_state",
+        raw_data=record,
+    )
+    console.print(f"[green]✅ State for {profile} sealed as artifact {artifact_id}[/green]")
+    console.print(f"  status: {parsed_status.value}"
+                  + (f"   created: {created}" if created else "")
+                  + (f"   removed: {removed}" if removed else ""))
+
+
+@app.command()
+def persistence(
+    case_id: str = typer.Option(..., "--case", help="Case ID"),
+    floor: float = typer.Option(0.6, "--floor",
+                                help="Minimum correlation strength for an inferred succession"),
+    window: int = typer.Option(90, "--window",
+                               help="Reconstitution window in days"),
+    lead_only: bool = typer.Option(False, "--lead-only",
+                                   help="Only infer from pairs the correlation engine flagged as leads"),
+    export_json: bool = typer.Option(False, "--json", help="Write the referral view to exports/"),
+    redacted: bool = typer.Option(False, "--redacted",
+                                  help="Export the platform-facing view instead, with identifiers withheld"),
+):
+    """Build the reconstitution chains for a case from sealed evidence.
+
+    Reads sealed correlation output and sealed account state, infers succession
+    where a removal is followed by a creation inside the window, and reports the
+    chains with their return intervals. Every inferred link is marked inferred.
+    Direction comes from the timestamps, never from the correlation, which
+    carries no ordering.
+    """
+    from rich.table import Table
+
+    pgraph, payload = _load_persistence_graph(case_id, db)
+    if pgraph is None:
+        console.print("[yellow]No sealed correlation found for this case. "
+                      "Run `correlate --case " + case_id + "` first.[/yellow]")
+        return
+
+    if not pgraph.states:
+        console.print("[yellow]No account state recorded for this case. Record removal "
+                      "and creation timestamps with `account-state` first — without them "
+                      "there is nothing to order.[/yellow]")
+        return
+
+    inferred = pgraph.infer_successions(
+        payload.get("pairwise", []),
+        strength_floor=floor,
+        window_days=window,
+        require_lead=lead_only,
+    )
+    summary = pgraph.persistence_summary()
+
+    console.print(f"\n[bold cyan]Persistence graph for {case_id}[/bold cyan]")
+    console.print(f"  accounts tracked: {summary['accounts_tracked']}   "
+                  f"removed: {summary['removed_accounts']}")
+    console.print(f"  succession links: {summary['succession_links']}   "
+                  f"inferred this run: {len(inferred)}")
+    console.print(f"  chains: {summary['chain_count']}   "
+                  f"longest chain: {summary['longest_chain_length']} accounts")
+    if summary["median_gap_hours"] is not None:
+        console.print(f"  median return time: {summary['median_gap_hours']:.1f} hours")
+    if summary["platforms_spanned"]:
+        console.print(f"  platforms spanned: {', '.join(summary['platforms_spanned'])}")
+
+    chains = pgraph.reconstitution_chains()
+    if not chains:
+        console.print("\n[cyan]No reconstitution chain formed. Either no removal is "
+                      "followed by a creation inside the window, or the correlation "
+                      "between them sits below the strength floor.[/cyan]")
+    for index, chain in enumerate(chains, start=1):
+        console.print(f"\n[bold]Chain {index}[/bold]: " + "  →  ".join(chain))
+
+    intervals = pgraph.reconstitution_intervals()
+    if intervals:
+        table = Table(title="Return intervals", show_lines=False)
+        table.add_column("Predecessor", style="cyan", overflow="fold")
+        table.add_column("Successor", style="cyan", overflow="fold")
+        table.add_column("Gap (hours)", justify="right")
+        table.add_column("Origin", justify="center")
+        for row in intervals:
+            gap = row["gap_hours"]
+            table.add_row(
+                row["predecessor"],
+                row["successor"],
+                f"{gap:.1f}" if gap is not None else "—",
+                "[yellow]inferred[/yellow]" if row["inferred"] else "observed",
+            )
+        console.print()
+        console.print(table)
+
+    handoffs = pgraph.cross_platform_handoffs()
+    if handoffs:
+        console.print("\n[bold cyan]Cross-platform handoffs:[/bold cyan]")
+        for row in handoffs:
+            console.print(f"  {row['source']} → {row['destination']}")
+
+    if export_json:
+        import json as _json
+        from pathlib import Path
+        out_dir = Path("exports")
+        out_dir.mkdir(exist_ok=True)
+        view = pgraph.to_redacted_view() if redacted else pgraph.to_dict()
+        suffix = "persistence_platform" if redacted else "persistence_referral"
+        out_path = out_dir / f"{case_id}_{suffix}.json"
+        out_path.write_text(_json.dumps(view, indent=2, sort_keys=True), encoding="utf-8")
+        console.print(f"\n[green]✅ {'Platform' if redacted else 'Referral'} "
+                      f"view written to {out_path}[/green]")
+
+    console.print("\n[dim]Chains describe accounts believed to be operated in "
+                  "coordination. They are not identifications of natural persons, "
+                  "and inferred links are suggestions for an analyst to confirm.[/dim]")
+
+
 if __name__ == "__main__":
     app()
