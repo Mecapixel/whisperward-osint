@@ -27,9 +27,10 @@ This project demonstrates production-grade skills directly transferable to ICAC-
 
 - Built a complete end-to-end investigative pipeline from raw public data to triaged, human-reviewable, court-defensible intelligence
 - **Defensive and forensic depth:** tamper-evident hash-chained chain of custody, cryptographically signed PDF case reports, PII redaction that never touches the sealed original, a 90-day retention enforcer, and a strict human-in-the-loop mandate on every escalation
-- **Production engineering:** 552 passing tests, structured logging, token-bucket rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
+- **Production engineering:** 591 passing tests, structured logging, token-bucket rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
 - **Standards-aware intelligence:** STIX 2.1 export with confidence and rationale on every relationship, an honest MITRE ATT&CK mapping that grades each technique direct or analogue and states what falls outside ATT&CK's scope, and a documented platform threat model ([`THREAT_MODEL.md`](THREAT_MODEL.md))
 - **Identity resolution done defensibly:** analyst-gated entity resolution where every graph edge carries its full justification, contradictions exclude accounts with the reason recorded, and promotion to a resolved identity requires a named analyst and lands in the tamper-evident custody chain
+- **Persistence tracking:** a directed succession graph that models what account-level enforcement misses — which account replaced which after a removal, how fast the operator returned, and where a contact moved off a moderated surface; direction is derived from removal and creation timestamps rather than asserted, and every inferred link is marked as inferred
 - **Responsible AI:** local-only analysis with explainable, decomposable risk scoring — no investigative data ever leaves the machine
 - **Full-stack delivery:** Python backend, a JSON API layer, and a D3-driven web dashboard with live data
 - **Governance first:** documented ethical boundaries, bias and fairness testing, and a calibrated tiered review workflow — see [`POLICY_BOUNDARY.md`](POLICY_BOUNDARY.md) and [`ethical_governance.md`](ethical_governance.md)
@@ -135,7 +136,7 @@ The dashboard asks for an operator name at sign-in. This is deliberately lightwe
 - Live Roblox avatar rendering in the subject dossier
 
 **Engineering**
-- 552 passing pytest tests, structured logging, rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
+- 591 passing pytest tests, structured logging, rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
 
 **Correlation and enrichment**
 - Cross-platform correlation engine fusing five rarity-weighted signals — username (RapidFuzz), stylometry, activity timing, shared network, and perceptual avatar hashing — with NetworkX identity clustering, contradiction checking, and per-signal rationale with a first-class CLI `correlate` command that seals its full result into the evidence store
@@ -151,6 +152,15 @@ The dashboard asks for an operator name at sign-in. This is deliberately lightwe
 - Strictly reconstructive investigation timeline: every event names its source table and row, and no event is ever inferred
 - Graph-aware risk scoring that reasons over graph-corroborated platforms when graph inputs are present; contradictions cap confidence and never alter a score
 
+**Persistence and reconstitution tracking**
+- Directed succession graph (`core/persistence_graph.py`) modeling the layer account-level enforcement does not touch: which account replaced which after a removal, ordered into reconstitution chains that show whether an operation was actually disrupted
+- Direction is derived from removal and creation timestamps rather than asserted by correlation, which carries no ordering; cycles are refused because a succession chain is temporally ordered
+- Succession inference from correlation output held to a configurable strength floor and reconstitution window, skipping any pair carrying a contradiction note, with every derived link flagged as inferred so analyst-observed successions stay distinguishable from suggested ones
+- Reconstitution intervals and median return time per chain — the measurement that makes a pattern legible to a platform, since a return measured in hours is not a coincidence
+- Cross-platform handoff edges recording migration off a moderated surface; same-platform movement is refused by construction
+- Reuses `EdgeJustification` from the identity graph rather than introducing a parallel evidence model, so an edge without a rationale cannot be created
+- Dual export: a full-fidelity referral view retaining identifiers, and a redacted platform view that replaces every account with an opaque chain and position label while preserving chain length, intervals, and platform span, carrying an explicit note that chains are correlation groupings and not identifications of natural persons
+
 **Standards-aware intelligence**
 - STIX 2.1 export: user-account observables, correlation relationships with confidence and rationale, analyst-resolved entities, and a suspicious-activity grouping — never emits adversary-assertion object types; byte-stable output sealed into the evidence store
 - Honest MITRE ATT&CK mapping that maps only fired technical signals, grades each mapping direct or analogue, and states explicitly which findings fall outside ATT&CK's scope and where they are documented instead
@@ -159,6 +169,7 @@ The dashboard asks for an operator name at sign-in. This is deliberately lightwe
 
 ### In active development
 - Additional platform modules via the plugin contract (public data only)
+- CLI and dashboard surfacing for the persistence graph; the module and its test suite are complete, but reconstitution chains are not yet exposed through a `whisperward.py` command or the web interface
 
 ---
 
@@ -176,7 +187,7 @@ Bias and fairness audits run on each major release. Any demographic proxy group 
 
 ## Architecture
 
-WhisperWard separates a reusable investigation core from the specializations built on top of it. The core owns evidence integrity, chain of custody, correlation, explainable risk scoring, redaction, retention, and reporting. A specialization declares its collectors, classifiers, and behavioral indicators to the core through a registration seam (`core/registry.py`) against stable contracts (`core/contracts.py`); the core never imports a specialization. Child safety is the first specialization. AI analysis runs entirely locally, every step logs its actions for auditability, and evidence is sealed under a tamper-evident hash chain.
+WhisperWard separates a reusable investigation core from the specializations built on top of it. The core owns evidence integrity, chain of custody, correlation, identity and persistence graphs, explainable risk scoring, redaction, retention, and reporting. A specialization declares its collectors, classifiers, and behavioral indicators to the core through a registration seam (`core/registry.py`) against stable contracts (`core/contracts.py`); the core never imports a specialization. Child safety is the first specialization. AI analysis runs entirely locally, every step logs its actions for auditability, and evidence is sealed under a tamper-evident hash chain.
 
 ```
                       CLI / Dashboard
@@ -185,6 +196,7 @@ WhisperWard separates a reusable investigation core from the specializations bui
         |            WhisperWard Core           |
         |  contracts · registry · plugin base   |
         |  correlation engine · risk engine     |
+        |  identity graph · persistence graph   |
         |  evidence store (SQLite + SHA-256     |
         |  chain of custody) · redaction ·      |
         |  retention · signed reporting         |
