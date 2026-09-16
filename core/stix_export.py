@@ -35,6 +35,8 @@ from typing import Optional
 
 import stix2
 
+from core.contradiction_note import normalize_contradiction_note
+
 # UUIDv5 namespace for deterministic WhisperWard SDO/SRO identifiers.
 WHISPERWARD_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, "whisperward.pixora.inc")
 
@@ -146,7 +148,7 @@ class StixExporter:
         if a not in accounts or b not in accounts:
             return None
         rationale = "; ".join(pair.get("rationale", []) or [])
-        contradiction = (pair.get("contradiction_note") or "").strip()
+        contradiction = normalize_contradiction_note(pair.get("contradiction_note"))
         description = ("Correlation lead" if pair.get("is_lead")
                        else "Sub-lead correlation")
         if rationale:

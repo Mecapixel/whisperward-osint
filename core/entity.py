@@ -34,6 +34,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
+from core.contradiction_note import normalize_contradiction_note
+
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -65,7 +67,7 @@ class MembershipJustification:
             "strength": round(float(strength), 4),
             "is_lead": bool(is_lead),
             "top_signals": list(top_signals),
-            "contradiction_note": contradiction_note or "",
+            "contradiction_note": normalize_contradiction_note(contradiction_note),
         })
 
     def to_dict(self) -> dict:
@@ -281,7 +283,7 @@ class EntityResolver:
             "profile_b": pair["profile_b"],
             "correlation_strength": float(pair.get("correlation_strength", 0.0)),
             "is_lead": bool(pair.get("is_lead", False)),
-            "contradiction_note": pair.get("contradiction_note", "") or "",
+            "contradiction_note": normalize_contradiction_note(pair.get("contradiction_note")),
             "top_signals": top_signals,
         }
 

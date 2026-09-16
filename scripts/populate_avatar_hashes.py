@@ -856,7 +856,7 @@ class CorrelationEngine:
                 penalty += 0.15
 
         return (
-            "; ".join(notes) if notes else "no contradictions detected",
+            "; ".join(notes),  # "" for a clean pair; consumers truth-test this
             penalty,
         )
 

@@ -41,6 +41,7 @@ from typing import Iterable, Optional
 
 import networkx as nx
 
+from core.contradiction_note import is_clean_contradiction_note
 from core.identity_graph import EdgeJustification
 
 
@@ -50,21 +51,11 @@ HANDED_OFF_TO = "handed_off_to"
 DEFAULT_INFERENCE_FLOOR = 0.65
 DEFAULT_RECONSTITUTION_WINDOW_DAYS = 30
 
-# CorrelationEngine reports a clean pair with a sentence rather than an empty
-# string, so a truthiness test on contradiction_note treats every clean pair as
-# contradicted. Normalizing here keeps inference working against real sealed
-# correlation output without changing what the engine emits.
-_CLEAN_CONTRADICTION_NOTES = frozenset({
-    "",
-    "no contradictions detected",
-})
-
-
 def _has_contradiction(note) -> bool:
-    """True when a contradiction note records an actual contradiction."""
-    if not note:
-        return False
-    return str(note).strip().lower() not in _CLEAN_CONTRADICTION_NOTES
+    """True when a contradiction note records an actual contradiction.
+    Delegates to the shared definition so legacy sealed records that still
+    carry the sentence form are read as clean."""
+    return not is_clean_contradiction_note(note)
 
 
 def _utc_now_iso() -> str:

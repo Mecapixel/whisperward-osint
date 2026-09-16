@@ -32,6 +32,8 @@ from typing import Optional
 
 import networkx as nx
 
+from core.contradiction_note import normalize_contradiction_note
+
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -101,7 +103,7 @@ class IdentityGraph:
             is_lead=bool(pair.get("is_lead", False)),
             signals=[dict(s) for s in pair.get("signals", []) or []],
             rationale=list(pair.get("rationale", []) or []),
-            contradiction_note=pair.get("contradiction_note", "") or "",
+            contradiction_note=normalize_contradiction_note(pair.get("contradiction_note")),
             scored_at=pair.get("scored_at", "") or "",
         )
         u, v = _edge_key(a, b)
