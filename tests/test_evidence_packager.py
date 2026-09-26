@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Test suite for the Evidence Packager
 Phase 4, Milestone 5
-Pixora Inc.
 
 These tests lock in the forensic behavior of the upgraded packager. The
 guarantees are that a package contains exactly the artifacts of the requested

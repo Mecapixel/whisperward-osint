@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Structured Referral Export
 Phase 4, Milestone 5
-Pixora Inc.
 
 This module assembles a case into a structured referral export whose fields are
 aligned with the publicly described structure of a CyberTipline style report. It

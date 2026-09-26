@@ -1,7 +1,7 @@
 """
 token_bucket_limiter.py
 WhisperWard OSINT — Rate Limiting Module
-Pixora Inc. | Phase 4 Milestone 1
+Phase 4 Milestone 1
 """
 
 import random

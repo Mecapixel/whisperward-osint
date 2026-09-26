@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Test suite for the Structured Referral Export
 Phase 4, Milestone 5
-Pixora Inc.
 
 These tests lock in the referral export behavior. The guarantees are that the
 referral carries the expected structure, that it is redacted by default and masks

@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Evidence Packager
 Phase 4, Milestone 5
-Pixora Inc.
 
 This module assembles a tamper evident evidence package for a case. It is an
 upgrade of the original packager and keeps the same package shape, a ZIP archive

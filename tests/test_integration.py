@@ -1,7 +1,7 @@
 """
 test_integration.py
 WhisperWard OSINT — Integration Tests
-Pixora Inc. | Phase 4 Milestone 1
+Phase 4 Milestone 1
 
 Full pipeline tests from case creation to evidence package.
 Uses in-memory/temp SQLite — no real API calls, no real Ollama, no real user data.

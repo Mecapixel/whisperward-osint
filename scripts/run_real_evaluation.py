@@ -1,7 +1,7 @@
 """
 run_real_evaluation.py
 WhisperWard OSINT — Real Risk Engine Evaluation
-Pixora Inc. | Phase 4
+Phase 4
 
 Runs the actual RiskEngine against a balanced synthetic dataset and
 produces a real precision, recall, and F1 report through the

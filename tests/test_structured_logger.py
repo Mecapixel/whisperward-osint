@@ -1,7 +1,7 @@
 """
 test_structured_logger.py
 WhisperWard OSINT — Structured Logger Tests
-Pixora Inc. | Phase 4 Milestone 1
+Phase 4 Milestone 1
 """
 
 import logging

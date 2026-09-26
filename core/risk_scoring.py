@@ -2,7 +2,6 @@
 """
 WhisperWard OSINT — Risk Scoring Bridge
 Phase 4, Milestone 8
-Pixora Inc.
 
 This module connects the structured RiskEngine to the live analysis pipeline.
 

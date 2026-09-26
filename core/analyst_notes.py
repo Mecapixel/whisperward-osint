@@ -1,7 +1,7 @@
 """
 core/analyst_notes.py
 WhisperWard Core — Analyst Notes
-Pixora Inc. | Roadmap Phase 2, Milestone 4
+Roadmap Phase 2, Milestone 4
 
 Human annotations as first-class case data. A note attaches to a case, and
 optionally to a target and to a specific finding (a risk-engine component

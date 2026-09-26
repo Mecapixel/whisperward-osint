@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Test suite for the Redaction Engine
 Phase 4, Milestone 5
-Pixora Inc.
 
 These tests lock in the redaction behavior. The guarantees are that structurally
 identifiable PII is masked, that analyst tagged protected values are masked

@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Signed Case Report Generator
 Phase 4, Milestone 5
-Pixora Inc.
 
 This module produces a professional case report as a PDF and applies a digital
 signature to it. The report draws its content from the case database, so it
@@ -34,7 +33,7 @@ Generating a report appends a report_signed entry to the tamper evident chain of
 custody log. Optionally it can first create the sealed evidence package so the
 report and the package are guaranteed to reference the same manifest hash.
 
-The layout follows the Pixora document standard, a clean professional style with
+The layout follows the project document standard, a clean professional style with
 a simple header, thin bordered tables, a per page footer, and no decorative
 banners. Visual polish is reviewed on screen, since fine spacing is judged by eye.
 """
@@ -164,7 +163,7 @@ def ensure_signing_identity(cert_dir: str = DEFAULT_CERT_DIR) -> str:
 
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     name = x509.Name([
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Pixora Inc."),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "WhisperWard OSINT"),
         x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "WhisperWard OSINT"),
         x509.NameAttribute(NameOID.COMMON_NAME, "WhisperWard Portfolio Signing Identity"),
     ])
@@ -351,7 +350,7 @@ def _build_pdf(case_data: dict, package_seal: dict, cert_info: dict,
 
     # Header block.
     story.append(Paragraph("WhisperWard OSINT Case Report", title_style))
-    story.append(Paragraph("Pixora Inc. confidential investigative document", subtitle_style))
+    story.append(Paragraph("WhisperWard OSINT confidential investigative document", subtitle_style))
     story.append(Paragraph("Report ID " + report_id, subtitle_style))
     story.append(Paragraph("Report version " + REPORT_VERSION
                            + "   WhisperWard " + WHISPERWARD_VERSION, subtitle_style))

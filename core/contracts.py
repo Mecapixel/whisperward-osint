@@ -1,7 +1,7 @@
 """
 core/contracts.py
 WhisperWard Core — Stable Contracts
-Pixora Inc. | Roadmap Phase 1
+Roadmap Phase 1
 
 This module defines the interfaces that every specialization module depends
 on. The contracts formalize shapes that already exist in the codebase; they

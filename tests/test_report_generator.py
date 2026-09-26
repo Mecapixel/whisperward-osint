@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Test suite for the Signed Case Report Generator
 Phase 4, Milestone 5
-Pixora Inc.
 
 These tests lock in the behavior of the signed report. The guarantees are that a
 report is produced and is a valid PDF, that the digital signature is

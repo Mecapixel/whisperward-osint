@@ -1,7 +1,7 @@
 """
 synthetic_profile_generator.py
 WhisperWard OSINT — Synthetic Data Pipeline
-Pixora Inc. | Phase 4 Milestone 1
+Phase 4 Milestone 1
 
 Generates entirely fabricated Roblox and Discord profiles for testing
 and validation. No real user data is ever used.

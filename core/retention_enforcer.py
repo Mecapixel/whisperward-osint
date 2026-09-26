@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Retention Enforcer
 Phase 4, Milestone 5
-Pixora Inc.
 
 This module enforces the data retention policy. Cases older than the retention
 window are purged so that personal data does not linger past its purpose, which is

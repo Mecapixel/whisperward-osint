@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Redaction Engine
 Phase 4, Milestone 5
-Pixora Inc.
 
 This module produces a redacted, shareable view of a case. It exists so that a
 case can be referred or shared without exposing the personal information of the

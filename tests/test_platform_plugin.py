@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Test suite for the Platform Plugin Architecture
 Phase 4, Milestone 6
-Pixora Inc.
 
 These tests lock in the plugin contract. The guarantees are that the normalized
 profile carries exactly the canonical keys, that the Roblox plugin maps a raw

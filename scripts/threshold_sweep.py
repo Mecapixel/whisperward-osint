@@ -1,7 +1,7 @@
 """
 threshold_sweep.py
 WhisperWard OSINT — Tier 2 Threshold Calibration Sweep
-Pixora Inc. | Phase 4
+Phase 4
 
 Sweeps the Tier 2 (review) threshold across a range and reports
 precision, recall, F1, FPR, and FNR at each step, using the real

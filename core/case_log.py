@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Chain of Custody Log
 Phase 4, Milestone 5
-Pixora Inc.
 
 This module turns the chain of custody log into a tamper evident record. The
 existing evidence_log table records who did what and when, but as an ordinary

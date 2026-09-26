@@ -1,7 +1,7 @@
 """
 core/evidence.py
 WhisperWard Core — Evidence Model
-Pixora Inc. | Roadmap Phase 2, Milestone 1
+Roadmap Phase 2, Milestone 1
 
 Promotes the Evidence contract (core/contracts.py) from a marker to a real
 model. No artifact exists in a Phase 2 evidence view without an identifier,

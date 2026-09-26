@@ -1,7 +1,7 @@
 """
 test_modules.py
 WhisperWard OSINT — Existing Module Unit Tests
-Pixora Inc. | Phase 4 Milestone 1
+Phase 4 Milestone 1
 
 All tests use mocks. No real API calls, no real Ollama, no real filesystem writes.
 No real user data used anywhere.

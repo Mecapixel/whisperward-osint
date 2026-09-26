@@ -2,7 +2,6 @@
 """
 seed_demo.py
 WhisperWard OSINT — Demo Seeder
-Pixora Inc.
 
 Seeds the database with clearly labeled synthetic demo cases, but only when the
 database has no cases of its own. This exists for stateless deployments such as
@@ -11,7 +10,6 @@ every start. Without a seed the public demo would show an empty registry.
 
 Everything seeded here is fabricated synthetic data, the kind the governance
 framework permits for demonstration. No real account and no real person is used.
-
 Design note: rather than run the risk engine at startup, this seeder writes the
 known scoring result for each synthetic case directly. The cases are fixed, so
 their structured scores are fixed too; recomputing them on every cold start

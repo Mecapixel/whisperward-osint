@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Test suite for the Threat List Refresh script
 Phase 4, Milestone 4
-Pixora Inc.
 
 These tests lock in the verified behavior of update_threat_lists.py so a future
 edit cannot silently regress it. No test makes a network call. The Tor download

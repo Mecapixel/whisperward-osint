@@ -1,7 +1,7 @@
 """
 precision_recall_reporter.py
 WhisperWard OSINT — Precision/Recall/F1 Reporting
-Pixora Inc. | Phase 4 Milestone 1
+Phase 4 Milestone 1
 
 Generates per-release performance metrics from synthetic test profiles.
 All evaluation uses fabricated data only.

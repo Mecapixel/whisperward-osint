@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Test suite for the IP Enrichment module
 Phase 4, Milestone 4
-Pixora Inc.
 
 These tests lock in the verified behavior of ip_enrichment.py so that a future
 edit cannot silently regress it. No test makes a network call. Geolocation and

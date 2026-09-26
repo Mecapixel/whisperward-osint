@@ -1,6 +1,6 @@
 # WhisperWard OSINT — Synthetic Test Cases
 
-**Version:** 4.1 | **Last Updated:** June 2026 | **Maintainer:** Pixora Inc.
+**Version:** 4.1 | **Last Updated:** June 2026 | **Maintainer:** Meca Dismukes
 
 All profiles below are entirely fabricated. No real users, no real children,
 no real predator accounts. These exist solely for validation of the risk engine

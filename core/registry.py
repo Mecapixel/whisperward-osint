@@ -1,7 +1,7 @@
 """
 core/registry.py
 WhisperWard Core — Specialization Registry
-Pixora Inc. | Roadmap Phase 1
+Roadmap Phase 1
 
 The registration seam between the reusable investigation core and the
 specialization modules. A specialization declares its capabilities here at

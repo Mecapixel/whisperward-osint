@@ -1,7 +1,7 @@
 """
 test_precision_recall_reporter.py
 WhisperWard OSINT — Precision/Recall/F1 Reporter Tests
-Pixora Inc. | Phase 4 Milestone 1
+Phase 4 Milestone 1
 
 All tests use synthetic profiles only.
 """

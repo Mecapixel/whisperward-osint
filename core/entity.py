@@ -1,7 +1,6 @@
 """
 WhisperWard — Unified Entity Model and Resolver
 Platform Phase 3, Milestone 1
-Pixora Inc.
 
 This module promotes the Entity contract in core/contracts.py to a real data
 model. Until now the correlation engine produced pairwise leads and clusters of

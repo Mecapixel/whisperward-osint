@@ -1,7 +1,7 @@
 """
 correlation_engine.py
 WhisperWard OSINT — Cross-Platform Correlation Engine
-Pixora Inc. | Phase 4 Milestone 3
+Phase 4 Milestone 3
 
 Fuses five independent identity signals into a single correlation
 confidence with a structured rationale. The engine never asserts that

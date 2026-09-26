@@ -1,7 +1,7 @@
 """
 structured_logger.py
 WhisperWard OSINT — Immutable Structured Logging
-Pixora Inc. | Phase 4 Milestone 1
+Phase 4 Milestone 1
 """
 
 import logging

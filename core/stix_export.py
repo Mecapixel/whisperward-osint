@@ -1,7 +1,6 @@
 """
 WhisperWard — STIX 2.1 Export
 Platform Phase 4, Milestone 1
-Pixora Inc.
 
 This module lets a WhisperWard case travel in the language threat-intelligence
 platforms already speak. The export is deliberately conservative about what it

@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Platform Plugin Architecture
 Phase 4, Milestone 6
-Pixora Inc.
 
 This module defines a clean interface for the platforms WhisperWard investigates,
 so that adding a platform is a matter of writing a plugin rather than threading a

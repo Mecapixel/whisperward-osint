@@ -1,7 +1,6 @@
 """
 WhisperWard — Identity Graph
 Platform Phase 3, Milestone 2
-Pixora Inc.
 
 The correlation engine produces pairwise judgments; the identity graph makes
 the whole web of those judgments a first-class, queryable structure. Nodes are

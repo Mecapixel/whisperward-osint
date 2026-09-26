@@ -1,7 +1,6 @@
 """
 WhisperWard — Investigation Timeline
 Platform Phase 3, Milestone 3
-Pixora Inc.
 
 The database already records everything that happens to a case: when it was
 opened, when targets were added, when artifacts were collected, when analyses

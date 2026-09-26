@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — IP Enrichment and Anonymization Detection
 Phase 4, Milestone 4
-Pixora Inc.
 
 This module enriches IP addresses that an investigator has already entered into
 a case. It never harvests addresses on its own, and the public Roblox and Discord

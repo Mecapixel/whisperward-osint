@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Test suite for the Chain of Custody Log
 Phase 4, Milestone 5
-Pixora Inc.
 
 These tests lock in the tamper evident behavior of the chain of custody log. The
 central guarantees are that a clean chain verifies, that editing any past entry is

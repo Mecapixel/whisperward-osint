@@ -1,7 +1,7 @@
 """
 core/explanation.py
 WhisperWard Core — Explanation Objects
-Pixora Inc. | Roadmap Phase 2, Milestone 3
+Roadmap Phase 2, Milestone 3
 
 Promotes the Explanation contract (core/contracts.py) from a marker to a
 real model. A finding stops being a string and becomes an object that

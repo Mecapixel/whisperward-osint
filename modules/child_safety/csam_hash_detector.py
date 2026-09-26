@@ -1,7 +1,7 @@
 """
 csam_hash_detector.py
 WhisperWard OSINT — CSAM Hash Detection Module
-Pixora Inc. | Phase 4 Milestone 7
+Phase 4 Milestone 7
 
 Architecture overview:
     This module provides three layers of hash detection:

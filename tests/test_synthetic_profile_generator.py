@@ -1,7 +1,7 @@
 """
 test_synthetic_profile_generator.py
 WhisperWard OSINT — Synthetic Data Pipeline Tests
-Pixora Inc. | Phase 4 Milestone 1
+Phase 4 Milestone 1
 
 All tests use entirely fabricated synthetic data only.
 No real user data is ever used in any test.

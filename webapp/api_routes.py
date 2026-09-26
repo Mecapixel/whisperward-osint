@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — JSON API Routes
 Phase 4, Milestone 6
-Pixora Inc.
 
 This module defines the JSON endpoints that the redesigned front end consumes.
 The existing page routes return rendered HTML, which is right for full pages, but

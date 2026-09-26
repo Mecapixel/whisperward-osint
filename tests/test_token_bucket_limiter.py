@@ -1,7 +1,7 @@
 """
 test_token_bucket_limiter.py
 WhisperWard OSINT — Rate Limiter Tests
-Pixora Inc. | Phase 4 Milestone 1
+Phase 4 Milestone 1
 """
 
 import time

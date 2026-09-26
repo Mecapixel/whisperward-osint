@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Test suite for the Retention Enforcer
 Phase 4, Milestone 5
-Pixora Inc.
 
 These tests lock in the retention behavior. The guarantees are that the default is
 a dry run that changes nothing, that a confirmed purge deletes the eligible case's

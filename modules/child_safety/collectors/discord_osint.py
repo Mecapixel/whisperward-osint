@@ -1,7 +1,6 @@
 # modules/discord_osint.py
 """
 WhisperWard OSINT — Discord Public OSINT Module
-Pixora Inc.
 
 This module collects Discord intelligence from strictly public, tokenless
 surfaces. Discord deliberately has no public endpoint for looking up an arbitrary

@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Test suite for the JSON API Routes
 Phase 4, Milestone 6
-Pixora Inc.
 
 These tests exercise the JSON endpoints through a FastAPI test client with a
 stubbed database, so the route shapes and computed values are verified without

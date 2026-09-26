@@ -1,7 +1,7 @@
 """
 test_correlation_engine.py
 WhisperWard OSINT — Correlation Engine Tests
-Pixora Inc. | Phase 4 Milestone 3
+Phase 4 Milestone 3
 
 All profiles are synthetic. No real user data.
 Tests run with use_semantic=False so they stay fast and need no model download.

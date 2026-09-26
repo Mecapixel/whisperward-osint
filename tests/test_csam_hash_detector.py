@@ -1,7 +1,7 @@
 """
 test_csam_hash_detector.py
 WhisperWard OSINT — CSAM Hash Detection Module Tests
-Pixora Inc. | Phase 4 Milestone 7
+Phase 4 Milestone 7
 
 All tests use synthetic fabricated images only.
 No real CSAM is used in any test under any circumstances.

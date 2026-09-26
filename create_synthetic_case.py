@@ -2,7 +2,6 @@
 """
 create_synthetic_case.py
 WhisperWard OSINT — Synthetic Case Generator (development / demo tool)
-Pixora Inc.
 
 Creates clearly labeled synthetic cases for testing and demonstration. Every
 case, target, and message produced here is fabricated. No real account, no real

@@ -1,7 +1,6 @@
 """
 WhisperWard — MITRE ATT&CK Mapping
 Platform Phase 4, Milestone 2
-Pixora Inc.
 
 ATT&CK models adversary behavior against computer systems. Most of what
 WhisperWard detects — the interpersonal manipulation of a minor — is not in
