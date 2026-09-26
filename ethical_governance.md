@@ -20,7 +20,7 @@ Tier 1 (Score 0.0 to 1.9) is logged for monitoring only, scheduled for re-scan p
 
 Tier 2 (Score 2.0 to 6.9) triggers immediate human reviewer notification. The reviewer must acknowledge within 24 hours. The assessment is logged with operator ID and UTC timestamp. No escalation occurs without explicit reviewer approval. Re-assessment is scheduled if the reviewer does not escalate.
 
-Tier 3 (Score 7.0 to 10.0) generates an evidence package automatically. Human sign-off is required before the package is filed. Reviewer credentials and acknowledgment are embedded in the PDF manifest. The NCMEC CyberTipline format is pre-populated for reviewer completion. All reviewer actions are logged with operator ID and UTC timestamp. An immutable audit trail is preserved from scan to referral. The Tier 3 boundary is intentionally set above the maximum score reachable from single-platform signals alone, so evidence-package generation requires corroborating cross-platform or historical evidence.
+Tier 3 (Score 7.0 to 10.0, with cross-platform or historical corroboration) generates an evidence package automatically. A score of 7.0 or above on single-platform evidence with no prior flags is held at Tier 2, with the reason recorded. Human sign-off is required before the package is filed. Reviewer credentials and acknowledgment are embedded in the PDF manifest. The NCMEC CyberTipline format is pre-populated for reviewer completion. All reviewer actions are logged with operator ID and UTC timestamp. An immutable audit trail is preserved from scan to referral. The Tier 3 boundary is intentionally set above the maximum score reachable from single-platform signals alone, so evidence-package generation requires corroborating cross-platform or historical evidence.
 
 ## 3. Data Retention Policy
 
@@ -36,13 +36,13 @@ All purge events are logged with UTC timestamp, operator ID, and case ID. Deleti
 
 ## 4. Bias & Fairness Testing
 
-The grooming classifier and age estimation module are audited for demographic bias on each major release.
+This section defines the bias and fairness standard that applies before WhisperWard processes any real accounts. It is a release gate for a production deployment, and it is not yet implemented: the portfolio build processes only synthetic data and investigator-created test accounts, which carry no real demographic variation to audit, so there is nothing yet for an audit to measure honestly.
 
-Bias testing evaluates performance across gender, geography, and linguistic register proxies available through public behavioral metadata. No protected-class data is collected directly — proxies only.
+Under that standard, the grooming classifier is audited for demographic bias before each major release of a deployment that handles real data. Testing evaluates performance across gender, geography, and linguistic register proxies available through public behavioral metadata. No protected-class data is collected directly — proxies only.
 
 If any demographic proxy group shows a false positive rate more than 5 percentage points above the baseline rate, the release is blocked until the disparity is resolved.
 
-Audit results are documented in this file and in the transparency report. Results are available to institutional partners on request.
+Audit results will be documented in this file and in the transparency report once audits run, and made available to institutional partners on request. Until then, the only measured false positive figure is the synthetic benchmark in `PERFORMANCE_BENCHMARK.md`, which is not a fairness measurement.
 
 ## 5. Transparency Report Template
 
@@ -106,7 +106,7 @@ No real chat logs, no real victim communications, and no private law enforcement
 
 The classifier is a first-pass signal generator, not a decision-making system. Every positive classification must pass through human review before any action is taken. The classifier explicitly returns a Decision value of ALLOW, REVIEW, or ESCALATE — escalation never triggers autonomous action.
 
-If any demographic proxy group shows a false positive rate more than 5 percentage points above the baseline rate in bias testing, the release is blocked.
+Under the bias standard in Section 4, which applies before any deployment processes real accounts, a demographic proxy group showing a false positive rate more than 5 percentage points above the baseline rate blocks the release.
 
 ### Negation Filtering
 

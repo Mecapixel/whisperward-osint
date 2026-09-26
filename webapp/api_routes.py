@@ -239,6 +239,9 @@ async def case_signals(case_id: str) -> Dict[str, Any]:
         "review_leads": [],
         "explanation": None,
         "analysis_type": None,
+        "synergy_bonus": 0.0,
+        "synergy_reasons": [],
+        "tier_hold_reason": None,
     }
 
     try:
@@ -281,6 +284,15 @@ async def case_signals(case_id: str) -> Dict[str, Any]:
     result["explanation"] = findings.get("explanation")
     result["top_signals"] = findings.get("top_signals", []) or []
     result["review_leads"] = findings.get("review_leads", []) or []
+    # The interaction term and any tier hold travel with the components, so the
+    # panel can show parts that sum to the score. Analyses recorded before these
+    # fields existed simply report no synergy line.
+    try:
+        result["synergy_bonus"] = float(findings.get("synergy_bonus") or 0.0)
+    except (TypeError, ValueError):
+        result["synergy_bonus"] = 0.0
+    result["synergy_reasons"] = findings.get("synergy_reasons", []) or []
+    result["tier_hold_reason"] = findings.get("tier_hold_reason")
 
     components = findings.get("components", []) or []
     cleaned: List[Dict[str, Any]] = []

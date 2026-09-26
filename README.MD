@@ -27,7 +27,7 @@ This project demonstrates production-grade skills directly transferable to ICAC-
 
 - Built a complete end-to-end investigative pipeline from raw public data to triaged, human-reviewable, court-defensible intelligence
 - **Defensive and forensic depth:** tamper-evident hash-chained chain of custody, cryptographically signed PDF case reports, PII redaction that never touches the sealed original, a 90-day retention enforcer, and a strict human-in-the-loop mandate on every escalation
-- **Production engineering:** 602 passing tests, structured logging, token-bucket rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
+- **Production engineering:** 659 passing tests, structured logging, token-bucket rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
 - **Standards-aware intelligence:** STIX 2.1 export with confidence and rationale on every relationship, an honest MITRE ATT&CK mapping that grades each technique direct or analogue and states what falls outside ATT&CK's scope, and a documented platform threat model ([`THREAT_MODEL.md`](THREAT_MODEL.md))
 - **Identity resolution done defensibly:** analyst-gated entity resolution where every graph edge carries its full justification, contradictions exclude accounts with the reason recorded, and promotion to a resolved identity requires a named analyst and lands in the tamper-evident custody chain
 - **Persistence tracking:** a directed succession graph that models what account-level enforcement misses — which account replaced which after a removal, how fast the operator returned, and where a contact moved off a moderated surface; direction is derived from removal and creation timestamps rather than asserted, and every inferred link is marked as inferred
@@ -64,7 +64,7 @@ python webapp/main.py
 
 The dashboard runs with no AI dependencies and seeds synthetic demo cases automatically when the database is empty. The full collection and analysis pipeline (live OSINT, local AI) requires the Ollama runtime and the additional setup in [Installation](#installation) below.
 
-The dashboard asks for an operator name at sign-in. This is deliberately lightweight: whoever runs the tool becomes the operator, the signed session cookie exists to prevent tampering rather than to gatekeep credentials, and the authoritative operator record lives in the tamper-evident chain-of-custody log. To keep sessions valid across host restarts, optionally set `WHISPERWARD_SESSION_SECRET` in the environment; otherwise a secret is generated and persisted locally on first run.
+The dashboard asks for an operator name at sign-in. This is deliberately lightweight: whoever runs the tool becomes the operator, the signed session cookie exists to prevent tampering rather than to gatekeep credentials, and the authoritative operator record lives in the tamper-evident chain-of-custody log. The sign-in screen and its auth key field illustrate the intended operator workflow; they are not a security boundary. The public demo holds only synthetic data and does not restrict access, including the JSON API under `/api`. A deployment holding real case data would add credential authentication and access control on every route, API included. To keep sessions valid across host restarts, optionally set `WHISPERWARD_SESSION_SECRET` in the environment; otherwise a secret is generated and persisted locally on first run.
 
 ---
 
@@ -76,8 +76,8 @@ The dashboard asks for an operator name at sign-in. This is deliberately lightwe
 </p>
 
 <p align="center">
-  <strong>Operator authentication</strong><br>
-  <img src="docs/screenshots/access.png" width="75%" alt="Operator authentication">
+  <strong>Operator sign-in</strong> — demonstration of the operator workflow; not a security boundary<br>
+  <img src="docs/screenshots/access.png" width="75%" alt="Operator sign-in">
 </p>
 
 <p align="center">
@@ -136,7 +136,7 @@ The dashboard asks for an operator name at sign-in. This is deliberately lightwe
 - Live Roblox avatar rendering in the subject dossier
 
 **Engineering**
-- 602 passing pytest tests, structured logging, rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
+- 659 passing pytest tests, structured logging, rate limiting with circuit breakers, and SHA-256 evidence integrity throughout
 
 **Correlation and enrichment**
 - Cross-platform correlation engine fusing five rarity-weighted signals — username (RapidFuzz), stylometry, activity timing, shared network, and perceptual avatar hashing — with NetworkX identity clustering, contradiction checking, and per-signal rationale with a first-class CLI `correlate` command that seals its full result into the evidence store
@@ -165,6 +165,8 @@ The dashboard asks for an operator name at sign-in. This is deliberately lightwe
 - STIX 2.1 export: user-account observables, correlation relationships with confidence and rationale, analyst-resolved entities, and a suspicious-activity grouping — never emits adversary-assertion object types; byte-stable output sealed into the evidence store
 - Honest MITRE ATT&CK mapping that maps only fired technical signals, grades each mapping direct or analogue, and states explicitly which findings fall outside ATT&CK's scope and where they are documented instead
 - Behavioral-indicator taxonomy documented at pattern level ([`docs/BEHAVIORAL_INDICATORS.md`](docs/BEHAVIORAL_INDICATORS.md)) with weights versioned to the shipped classifier
+- Risk-scoring methodology documented in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md): the model and where each parameter came from, what the synthetic validation does and does not show, weight and threshold sensitivity over a 1,536-profile factorial grid, adversarial evasion results including known limitations, and two findings where the engine diverged from its own documentation, both now corrected
+- Every displayed score decomposes exactly: the case page shows each weighted component, the itemized corroboration synergy, and their sum
 - Platform threat model ([`THREAT_MODEL.md`](THREAT_MODEL.md)) covering assets, adversaries, failure modes, mitigations, and residual risks
 
 ### In active development
@@ -180,9 +182,9 @@ WhisperWard generates intelligence; a qualified human makes every determination.
 
 - **Tier 1 (0.0 – 1.9)** — logged for monitoring, scheduled for re-scan, no notification
 - **Tier 2 (2.0 – 6.9)** — human reviewer notified, must acknowledge within 24 hours, no escalation without explicit approval
-- **Tier 3 (7.0 – 10.0)** — evidence package generated automatically, but never filed without credentialed human sign-off embedded in the package manifest
+- **Tier 3 (7.0 – 10.0, with corroboration)** — evidence package generated automatically, but never filed without credentialed human sign-off embedded in the package manifest. Escalation requires cross-platform presence or prior history; a score of 7.0 or above on single-platform evidence alone is held at Tier 2 with the reason recorded
 
-Bias and fairness audits run on each major release. Any demographic proxy group showing a false positive rate more than five points above baseline blocks the release until resolved.
+Bias and fairness audits are defined as a release gate for any deployment that processes real accounts: a demographic proxy group showing a false positive rate more than five points above baseline blocks the release. The portfolio build processes synthetic data only and does not yet run these audits; see [`ethical_governance.md`](ethical_governance.md). Measured detection performance on the synthetic benchmark is in [`PERFORMANCE_BENCHMARK.md`](PERFORMANCE_BENCHMARK.md) and enforced by the test suite.
 
 ---
 

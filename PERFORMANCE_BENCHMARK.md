@@ -19,12 +19,16 @@
 
 ## Performance Targets
 
-| Metric | Target | Status |
-|---|---|---|
-| Full scan latency | Under 45 seconds | Documented below |
-| False positive rate | Under 15% on safe profiles | Enforced by test suite |
-| False negative rate | Under 5% on threat profiles | Enforced by test suite |
-| F1 Score | 0.70 or higher | Enforced by test suite |
+| Metric | Target | Measured | Status |
+|---|---|---|---|
+| Full scan latency | Under 45 seconds | 28–47 seconds | Documented below |
+| False positive rate, safe profiles | Under 15% | 0% (0 of 50) | Enforced by `tests/test_benchmark_targets.py` |
+| Recall, threat profiles | 85% or higher | 90% (45 of 50) | Enforced by `tests/test_benchmark_targets.py` |
+| Precision | 0.75 or higher | 1.00 | Enforced by `tests/test_benchmark_targets.py` |
+| F1 score | 0.70 or higher | 0.87 | Enforced by `tests/test_benchmark_targets.py` |
+| Recall, edge profiles | Recorded, not targeted | 10% (1 of 10) | Known limitation |
+
+Measured by scoring the seed-42 synthetic set (50 safe, 50 threat, 10 edge) end to end through the risk engine. Those profiles are drawn from message lists authored alongside the classifier, so these figures establish internal consistency, not real-world detection; see [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md). Edge profiles are ambiguous by construction, and the engine leaves most of them below review rather than raise its false positive rate on safe profiles, which is held at zero. An earlier version of this table listed a false negative target under 5% as enforced; no test enforced it, and the engine does not meet it.
 
 ---
 
@@ -59,10 +63,10 @@ Run automatically on each release via `pytest` and `precision_recall_reporter.py
 
 | Metric | Result | Target | Pass |
 |---|---|---|---|
-| Total tests | 408 | N/A | N/A |
+| Total tests | 659 | N/A | N/A |
 | Test execution time | Under 20 seconds | N/A | Yes |
-| False positive rate | Evaluated per release | Under 15% | Enforced |
-| False negative rate | Evaluated per release | Under 5% | Enforced |
+| False positive rate, safe profiles | 0% | Under 15% | Yes |
+| Recall, threat profiles | 90% | 85% or higher | Yes |
 
 ---
 

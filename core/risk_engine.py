@@ -22,15 +22,21 @@ class Tier(int, Enum):
 # dataset (50 safe, 50 threat, 10 edge) via threshold sweep. The Tier 2
 # boundary at 2.0 holds recall at 0.85 with zero false positives while
 # preserving a full point of margin below the review line for real-world
-# noise that sterile synthetic safe profiles do not exhibit. Tier 3 at 7.0
-# sits above the ceiling reachable from single-platform signals alone,
-# so evidence-package escalation requires cross-platform or historical
-# corroboration. Recalibrated each major release.
+# noise that sterile synthetic safe profiles do not exhibit. Tier 3 begins
+# at 7.0, and escalation to an evidence package additionally requires
+# cross-platform or historical corroboration. That requirement is enforced
+# as an explicit rule in RiskEngine.score, not left to the weights: a
+# single-platform subject with no history can reach exactly 7.0, so the
+# arithmetic alone does not guarantee it (docs/METHODOLOGY.md). Recalibrated
+# each major release.
 TIER_THRESHOLDS = {
     Tier.TIER_1: (0.0, 1.9),
     Tier.TIER_2: (2.0, 6.9),
     Tier.TIER_3: (7.0, 10.0),
 }
+
+
+SYNERGY_CAP = 0.15
 
 
 def score_to_tier(score: float) -> Tier:
@@ -93,6 +99,12 @@ class RiskResult:
     scored_at: str
     confidence: str = "medium"
     confidence_reasons: list[str] = field(default_factory=list)
+    # The interaction term, itemized, so displayed parts sum to the score.
+    synergy_bonus: float = 0.0
+    synergy_reasons: list[str] = field(default_factory=list)
+    # Set when the score reaches Tier 3 without corroboration and the tier is
+    # held at Tier 2. The score itself is never altered.
+    tier_hold_reason: Optional[str] = None
 
     def to_dict(self) -> dict:
         return {
@@ -115,6 +127,9 @@ class RiskResult:
             "explanation": self.explanation,
             "confidence": self.confidence,
             "confidence_reasons": list(self.confidence_reasons),
+            "synergy_bonus": round(self.synergy_bonus, 4),
+            "synergy_reasons": list(self.synergy_reasons),
+            "tier_hold_reason": self.tier_hold_reason,
             "scored_at": self.scored_at,
         }
 
@@ -145,11 +160,14 @@ class RiskEngine:
         if classifier_result is None and signals.chat_messages:
             if self._classifier is None:
                 self._classifier = get_classifier()
+            # The grooming component measures language only. Account age and
+            # friend rate are scored once, in the velocity component, so they
+            # are deliberately not passed to the classifier here: its behavior
+            # boost would count the same evidence a second time under the
+            # grooming weight, and velocity's stated weight would understate
+            # its real influence.
             classifier_result = self._classifier.classify_profile(
                 chat_messages=signals.chat_messages,
-                account_age_days=signals.account_age_days,
-                friend_count=signals.friend_count,
-                is_new_account=(signals.account_age_days is not None and signals.account_age_days < 30),
             )
 
         components: list[ScoreComponent] = []
@@ -224,13 +242,30 @@ class RiskEngine:
             )
         )
 
-        synergy_bonus = self._synergy_bonus(signals, components, classifier_result)
+        synergy_terms = self._synergy_terms(signals, components, classifier_result)
+        synergy_bonus = min(SYNERGY_CAP, sum(amount for amount, _ in synergy_terms))
+        synergy_reasons = [reason for _, reason in synergy_terms]
         normalized_score = sum(c.weighted_score for c in components) + synergy_bonus
         risk_score = round(min(10.0, normalized_score * 10.0), 2)
         tier = score_to_tier(risk_score)
 
+        # Escalation requires corroboration. A score can reach the Tier 3
+        # threshold on single-platform evidence alone, so the requirement is
+        # enforced as a rule rather than left to the arithmetic of the weights.
+        # The score is unchanged; only the tier is held, with the reason stated.
+        tier_hold_reason = None
+        if tier == Tier.TIER_3 and not self._has_corroboration(signals):
+            tier = Tier.TIER_2
+            tier_hold_reason = (
+                "score reaches the escalation threshold on single-platform "
+                "evidence with no prior flags; held at human review because "
+                "escalation requires cross-platform or historical corroboration"
+            )
+
         top_signals = self._build_top_signals(components, classifier_result, synergy_bonus)
         explanation = self._build_explanation(risk_score, tier, top_signals)
+        if tier_hold_reason:
+            explanation = f"{explanation}. Held at Tier 2: {tier_hold_reason}"
 
         overall_conf, overall_reasons = self._overall_confidence(components)
 
@@ -244,7 +279,20 @@ class RiskEngine:
             scored_at=datetime.now(timezone.utc).isoformat(),
             confidence=overall_conf,
             confidence_reasons=overall_reasons,
+            synergy_bonus=synergy_bonus,
+            synergy_reasons=synergy_reasons,
+            tier_hold_reason=tier_hold_reason,
         )
+
+    @staticmethod
+    def _has_corroboration(signals: RiskSignals) -> bool:
+        """Cross-platform presence or prior history. When identity-graph
+        inputs exist, corroborated platforms are used in place of raw presence,
+        matching the cross-platform component."""
+        platforms = (signals.graph_lead_platforms
+                     if signals.graph_lead_platforms is not None
+                     else signals.platform_count)
+        return (platforms or 0) >= 2 or (signals.prior_case_flags or 0) >= 1
 
     # ------------------------------------------------------------------
     # Phase 2 M2 — Confidence engine.
@@ -438,19 +486,20 @@ class RiskEngine:
             return 0.4
         return 0.0
 
-    def _synergy_bonus(
+    def _synergy_terms(
         self,
         signals: RiskSignals,
         components: list[ScoreComponent],
         classifier_result: Optional[ClassifierResult],
-    ) -> float:
+    ) -> list[tuple[float, str]]:
+        """Each co-occurrence pattern that fired, with its amount and reason.
+        Itemized so the breakdown can show exactly where the bonus came from."""
         active = sum(1 for c in components if c.weighted_score > 0)
-        bonus = 0.0
-
+        terms: list[tuple[float, str]] = []
         if classifier_result and classifier_result.grooming_score >= 0.2 and signals.platform_count >= 2:
-            bonus += 0.05
+            terms.append((0.05, "grooming language on two or more platforms"))
         if active >= 3:
-            bonus += 0.05
+            terms.append((0.05, f"{active} independent components active"))
         if (
             classifier_result
             and classifier_result.grooming_score >= 0.15
@@ -459,9 +508,16 @@ class RiskEngine:
             and signals.account_age_days is not None
             and signals.account_age_days < 30
         ):
-            bonus += 0.05
+            terms.append((0.05, "grooming on a new, anonymized, multi-platform account"))
+        return terms
 
-        return min(0.15, bonus)
+    def _synergy_bonus(
+        self,
+        signals: RiskSignals,
+        components: list[ScoreComponent],
+        classifier_result: Optional[ClassifierResult],
+    ) -> float:
+        return min(SYNERGY_CAP, sum(a for a, _ in self._synergy_terms(signals, components, classifier_result)))
 
     def _explain_cross_platform(self, signals: RiskSignals) -> str:
         if signals.graph_lead_platforms is not None:

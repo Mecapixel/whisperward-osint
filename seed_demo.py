@@ -13,12 +13,14 @@ Everything seeded here is fabricated synthetic data, the kind the governance
 framework permits for demonstration. No real account and no real person is used.
 
 Design note: rather than run the risk engine at startup, this seeder writes the
-known, pre-computed scoring result for each synthetic case directly. The cases
-are fixed, so their structured scores are fixed too; recomputing them on every
-cold start would add a failure point on a constrained host for no benefit. The
-findings written here are the genuine RiskEngine output captured from a local
-run, so the dashboard, gauge, and signals panel display real, accurate data.
-This makes the seeder dependency-free and robust on any host.
+known scoring result for each synthetic case directly. The cases are fixed, so
+their structured scores are fixed too; recomputing them on every cold start
+would add a failure point on a constrained host for no benefit. The findings
+below are generated from the real RiskEngine, never typed by hand, and
+tests/test_seed_demo_parity.py rescores every case on each test run and fails
+if a seeded value differs from what the engine produces. The demo therefore
+cannot drift from the engine: an engine change that moves a demo score breaks
+the build until these values are regenerated.
 
 The seeder is idempotent by guard: it does nothing when any case already exists,
 so it never disturbs a real working database and never duplicates on restart.
@@ -97,65 +99,138 @@ def _sherlock_artifact(username, platforms_found):
 # Pre-computed RiskEngine findings, captured from a local scoring run. These are
 # the genuine structured outputs for the two fixed synthetic cases. Seeding them
 # directly avoids running the engine at startup on a constrained host.
-GROOMING_FINDINGS = {
-    "engine": "RiskEngine",
-    "tier": 2,
-    "tier_label": "Human Review Required",
-    "components": [
-        {"name": "grooming_classifier", "weight": 0.4, "raw_score": 0.6333,
-         "weighted_score": 0.2533,
-         "explanation": "strong grooming language pattern detected across multiple categories"},
-        {"name": "cross_platform_correlation", "weight": 0.25, "raw_score": 0.4,
-         "weighted_score": 0.1, "explanation": "username present on 2 platforms"},
-        {"name": "anonymization_ip", "weight": 0.15, "raw_score": 0.0,
-         "weighted_score": 0.0, "explanation": "no anonymization tools detected"},
-        {"name": "behavioral_velocity", "weight": 0.1, "raw_score": 0.3,
-         "weighted_score": 0.03, "explanation": "account is 20 days old"},
-        {"name": "historical_signals", "weight": 0.1, "raw_score": 0.0,
-         "weighted_score": 0.0, "explanation": "no prior flags in database"},
-    ],
-    "top_signals": [
-        "strong grooming language pattern detected across multiple categories",
-        "username present on 2 platforms",
-        "account is 20 days old",
-        "secrecy solicitation detected (2 instances)",
-        "platform migration pressure detected (2 instances)",
-    ],
-    "explanation": ("Moderate risk — human review required within 24 hours. "
-                    "Primary signal: strong grooming language pattern detected "
-                    "across multiple categories"),
-}
+GROOMING_FINDINGS = {'engine': 'RiskEngine',
+ 'tier': 2,
+ 'tier_label': 'Human Review Required',
+ 'components': [{'name': 'grooming_classifier',
+                 'weight': 0.4,
+                 'raw_score': 0.6333,
+                 'weighted_score': 0.2533,
+                 'explanation': 'strong grooming language pattern detected across '
+                                'multiple categories; multi-step grooming sequence '
+                                'confirmed',
+                 'confidence': 'medium',
+                 'confidence_reasons': ['behavioral classifier evaluated 7 messages',
+                                        '5 messages matched behavioral patterns',
+                                        'moderate message volume; more chat history '
+                                        'would strengthen the assessment']},
+                {'name': 'cross_platform_correlation',
+                 'weight': 0.25,
+                 'raw_score': 0.4,
+                 'weighted_score': 0.1,
+                 'explanation': 'username present on 2 platforms',
+                 'confidence': 'high',
+                 'confidence_reasons': ['identity observed on 2 platform(s)',
+                                        'cross-platform presence is directly observed, '
+                                        'not inferred']},
+                {'name': 'anonymization_ip',
+                 'weight': 0.15,
+                 'raw_score': 0.0,
+                 'weighted_score': 0.0,
+                 'explanation': 'no anonymization tools detected',
+                 'confidence': 'medium',
+                 'confidence_reasons': ['no anonymization flags present; absence may '
+                                        'reflect unavailable IP data']},
+                {'name': 'behavioral_velocity',
+                 'weight': 0.1,
+                 'raw_score': 0.3,
+                 'weighted_score': 0.03,
+                 'explanation': 'account is 20 days old',
+                 'confidence': 'high',
+                 'confidence_reasons': ['account age observed: 20 days',
+                                        'friend count observed: 90']},
+                {'name': 'historical_signals',
+                 'weight': 0.1,
+                 'raw_score': 0.0,
+                 'weighted_score': 0.0,
+                 'explanation': 'no prior flags in database',
+                 'confidence': 'high',
+                 'confidence_reasons': ['prior case flags on record: 0',
+                                        'game history flags on record: 0']}],
+ 'top_signals': ['strong grooming language pattern detected across multiple '
+                 'categories; multi-step grooming sequence confirmed',
+                 'username present on 2 platforms',
+                 'account is 20 days old',
+                 'secrecy solicitation detected (2 instances)',
+                 'platform migration pressure detected (2 instances)'],
+ 'explanation': 'Moderate risk — human review required within 24 hours. Primary '
+                'signal: strong grooming language pattern detected across multiple '
+                'categories; multi-step grooming sequence confirmed',
+ 'confidence': 'medium',
+ 'confidence_reasons': ['assessment is usable but would strengthen with additional '
+                        'observed data'],
+ 'synergy_bonus': 0.1,
+ 'synergy_reasons': ['grooming language on two or more platforms',
+                     '3 independent components active'],
+ 'tier_hold_reason': None}
 
-SEVERE_FINDINGS = {
-    "engine": "RiskEngine",
-    "tier": 3,
-    "tier_label": "Escalate — Evidence Package",
-    "components": [
-        {"name": "grooming_classifier", "weight": 0.4, "raw_score": 1.0,
-         "weighted_score": 0.4,
-         "explanation": "strong grooming language pattern detected across multiple categories"},
-        {"name": "cross_platform_correlation", "weight": 0.25, "raw_score": 1.0,
-         "weighted_score": 0.25,
-         "explanation": "username present on 4 platforms — high cross-platform footprint"},
-        {"name": "anonymization_ip", "weight": 0.15, "raw_score": 0.0,
-         "weighted_score": 0.0, "explanation": "no anonymization tools detected"},
-        {"name": "behavioral_velocity", "weight": 0.1, "raw_score": 0.7,
-         "weighted_score": 0.07,
-         "explanation": "account is 12 days old; high friend acquisition rate (23.3/day)"},
-        {"name": "historical_signals", "weight": 0.1, "raw_score": 0.0,
-         "weighted_score": 0.0, "explanation": "no prior flags in database"},
-    ],
-    "top_signals": [
-        "strong grooming language pattern detected across multiple categories",
-        "username present on 4 platforms — high cross-platform footprint",
-        "account is 12 days old; high friend acquisition rate (23.3/day)",
-        "age probing detected (3 instances)",
-        "secrecy solicitation detected (2 instances)",
-    ],
-    "explanation": ("High risk — evidence package generated. Human sign-off "
-                    "required before any filing. Primary signal: strong grooming "
-                    "language pattern detected across multiple categories"),
-}
+SEVERE_FINDINGS = {'engine': 'RiskEngine',
+ 'tier': 3,
+ 'tier_label': 'Escalate — Evidence Package',
+ 'components': [{'name': 'grooming_classifier',
+                 'weight': 0.4,
+                 'raw_score': 0.8467,
+                 'weighted_score': 0.3387,
+                 'explanation': 'strong grooming language pattern detected across '
+                                'multiple categories; multi-step grooming sequence '
+                                'confirmed',
+                 'confidence': 'medium',
+                 'confidence_reasons': ['behavioral classifier evaluated 11 messages',
+                                        '8 messages matched behavioral patterns',
+                                        'moderate message volume; more chat history '
+                                        'would strengthen the assessment']},
+                {'name': 'cross_platform_correlation',
+                 'weight': 0.25,
+                 'raw_score': 1.0,
+                 'weighted_score': 0.25,
+                 'explanation': 'username present on 4 platforms — high cross-platform '
+                                'footprint',
+                 'confidence': 'high',
+                 'confidence_reasons': ['identity observed on 4 platform(s)',
+                                        'cross-platform presence is directly observed, '
+                                        'not inferred']},
+                {'name': 'anonymization_ip',
+                 'weight': 0.15,
+                 'raw_score': 0.0,
+                 'weighted_score': 0.0,
+                 'explanation': 'no anonymization tools detected',
+                 'confidence': 'medium',
+                 'confidence_reasons': ['no anonymization flags present; absence may '
+                                        'reflect unavailable IP data']},
+                {'name': 'behavioral_velocity',
+                 'weight': 0.1,
+                 'raw_score': 0.7,
+                 'weighted_score': 0.07,
+                 'explanation': 'account is 12 days old; high friend acquisition rate '
+                                '(23.3/day)',
+                 'confidence': 'high',
+                 'confidence_reasons': ['account age observed: 12 days',
+                                        'friend count observed: 280']},
+                {'name': 'historical_signals',
+                 'weight': 0.1,
+                 'raw_score': 0.0,
+                 'weighted_score': 0.0,
+                 'explanation': 'no prior flags in database',
+                 'confidence': 'high',
+                 'confidence_reasons': ['prior case flags on record: 0',
+                                        'game history flags on record: 0']}],
+ 'top_signals': ['strong grooming language pattern detected across multiple '
+                 'categories; multi-step grooming sequence confirmed',
+                 'username present on 4 platforms — high cross-platform footprint',
+                 'account is 12 days old; high friend acquisition rate (23.3/day)',
+                 'age probing detected (3 instances)',
+                 'secrecy solicitation detected (2 instances)'],
+ 'explanation': 'High risk — evidence package generated. Human sign-off required '
+                'before any filing. Primary signal: strong grooming language pattern '
+                'detected across multiple categories; multi-step grooming sequence '
+                'confirmed',
+ 'confidence': 'medium',
+ 'confidence_reasons': ['assessment is usable but would strengthen with additional '
+                        'observed data'],
+ 'synergy_bonus': 0.1,
+ 'synergy_reasons': ['grooming language on two or more platforms',
+                     '3 independent components active'],
+ 'tier_hold_reason': None}
 
 
 DEMO_VARIANTS = [
@@ -178,7 +253,7 @@ DEMO_VARIANTS = [
         "friend_count": 280,
         "platforms_found": 4,
         "games": [{"name": "Synthetic Demo Place", "place_visits": 0}],
-        "risk_score": 8.2,
+        "risk_score": 7.59,
         "findings": SEVERE_FINDINGS,
     },
 ]
@@ -215,7 +290,7 @@ def seed_if_empty(db) -> bool:
             db.save_artifact(target_id, "SherlockIntegration", "username_correlation",
                              _sherlock_artifact(v["username"], v["platforms_found"]))
 
-            # Write the known, pre-computed structured result directly. A copy of
+            # Write the engine-generated structured result directly. A copy of
             # the findings is made and stamped with the scoring time, so each
             # seeded record carries its own timestamp.
             findings = dict(v["findings"])

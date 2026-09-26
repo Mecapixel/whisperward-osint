@@ -83,6 +83,11 @@
       .leads-block .leads-label { font-family: var(--font-mono); font-size: 13px; color: var(--red-glow); letter-spacing: 2px; margin-bottom: 6px; text-transform: uppercase; }
       .leads-block .leads-note { font-family: var(--font-mono); font-size: 12px; color: var(--silver-dim); }
       .breakdown-empty { font-family: var(--font-mono); font-size: 14px; color: var(--silver-dim); letter-spacing: 1px; padding: 20px 0; }
+      .component-fill.synergy { background: linear-gradient(90deg, #6b6b6b 0%, #b0b0b0 100%); box-shadow: none; }
+      .breakdown-total { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 14px; letter-spacing: 1px; color: var(--silver-bright); border-top: 1px dashed var(--silver-dim); padding-top: 8px; margin-top: 4px; }
+      .breakdown-total .total-sum { color: var(--silver-dim); }
+      .hold-block { margin-top: 12px; border: 1px solid #d4a017; background: rgba(40,32,10,0.3); padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: var(--silver); letter-spacing: 0.5px; }
+      .hold-block .hold-label { color: #d4a017; letter-spacing: 2px; margin-bottom: 4px; text-transform: uppercase; font-size: 13px; }
 
       body { overflow-y: auto !important; }
     </style>
@@ -380,6 +385,41 @@
         row.append('div').attr('class', 'component-expl').text(c.explanation);
       }
     });
+
+    // Corroboration synergy: the interaction term, shown as its own line so the
+    // displayed parts sum to the score. The bar shows it against its 1.5 cap.
+    const synergy = Number(data.synergy_bonus || 0);
+    if (synergy > 0) {
+      const row = host.append('div').attr('class', 'component-row');
+      const head = row.append('div').attr('class', 'component-head');
+      head.append('span').attr('class', 'component-name').text('corroboration synergy');
+      head.append('span').attr('class', 'component-weight')
+        .text('interaction term  ·  +' + (synergy * 10).toFixed(2) + ' pts');
+      const track = row.append('div').attr('class', 'component-track');
+      const fill = track.append('div').attr('class', 'component-fill synergy');
+      const pct = Math.max(0, Math.min(1, synergy / 0.15)) * 100;
+      setTimeout(function () { fill.style('width', pct + '%'); }, 50);
+      if (data.synergy_reasons && data.synergy_reasons.length) {
+        row.append('div').attr('class', 'component-expl')
+          .text('co-occurring signals: ' + data.synergy_reasons.join('; '));
+      }
+    }
+
+    // Total: the visible parts, summed, equal the score.
+    const partsSum = data.components.reduce(function (acc, c) {
+      return acc + (Number(c.weighted_score) || 0) * 10;
+    }, 0) + synergy * 10;
+    const total = host.append('div').attr('class', 'breakdown-total');
+    total.append('span').text('RISK SCORE');
+    total.append('span').attr('class', 'total-sum')
+      .text('components + synergy = ' + partsSum.toFixed(2) + ' / 10');
+
+    // Tier hold: a score at the escalation threshold without corroboration.
+    if (data.tier_hold_reason) {
+      const hold = host.append('div').attr('class', 'hold-block');
+      hold.append('div').attr('class', 'hold-label').text('Held at human review');
+      hold.append('div').text(data.tier_hold_reason);
+    }
 
     // Top signals
     if (data.top_signals && data.top_signals.length) {

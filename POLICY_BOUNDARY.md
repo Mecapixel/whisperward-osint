@@ -120,7 +120,7 @@ Case data is auto-purged after 90 days unless escalated to law enforcement. Esca
 
 All purge events are logged with timestamp and operator ID.
 
-Bias and fairness audits on the grooming classifier are conducted on each major release, evaluating performance across demographic proxies available through public behavioral metadata. Any demographic proxy group showing a false positive rate more than 5 percentage points above baseline blocks the release until resolved.
+Before any deployment processes real accounts, bias and fairness audits on the grooming classifier are required on each major release, evaluating performance across demographic proxies available through public behavioral metadata. Any demographic proxy group showing a false positive rate more than 5 percentage points above baseline blocks the release until resolved. The portfolio build processes synthetic data only and does not yet run these audits; see Section 4 of `ethical_governance.md`.
 
 ---
 
