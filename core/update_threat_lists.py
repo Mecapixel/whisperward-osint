@@ -1,7 +1,6 @@
 """
 WhisperWard OSINT — Threat List Refresh
 Phase 4, Milestone 4
-Pixora Inc.
 
 This script refreshes the local threat intelligence that the IP enrichment module
 reads. It is meant to be run between cases, never during one, so that enrichment
